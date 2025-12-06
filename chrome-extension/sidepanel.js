@@ -168,7 +168,7 @@ class AppController {
         fortune.yearPillar.branch,
         fortune.monthPillar.branch,
         fortune.dayPillar.branch,
-        fortune.hourPillar.branch,
+        fortune.hourPillar ? fortune.hourPillar.branch : null,
       );
       console.log("Juuniun calculated:", juuniunResults);
 
@@ -177,7 +177,7 @@ class AppController {
         fortune.dayPillar.stem,
         fortune.yearPillar.stem,
         fortune.monthPillar.stem,
-        fortune.hourPillar.stem,
+        fortune.hourPillar ? fortune.hourPillar.stem : null,
       );
       console.log("Tsuuhen calculated:", tsuuhenResults);
 
@@ -267,31 +267,31 @@ class AppController {
           <!-- 十二運 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.year || "-"}
+              ${juuniunResults.year ? juuniunResults.year.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.month || "-"}
+              ${juuniunResults.month ? juuniunResults.month.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.day || "-"}
+              ${juuniunResults.day ? juuniunResults.day.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.hour || "-"}
+              ${juuniunResults.hour ? juuniunResults.hour.juuniun : "-"}
             </td>
           </tr>
           <!-- 通変星 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.year || "-"}
+              ${tsuuhenResults.year ? tsuuhenResults.year.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.month || "-"}
+              ${tsuuhenResults.month ? tsuuhenResults.month.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.day || "-"}
+              ${tsuuhenResults.day ? tsuuhenResults.day.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.hour || "-"}
+              ${tsuuhenResults.hour ? tsuuhenResults.hour.tsuuhen : "-"}
             </td>
           </tr>
         </tbody>
