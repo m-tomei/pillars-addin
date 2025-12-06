@@ -2,41 +2,41 @@
  * 結果描画クラス
  */
 export class ResultRenderer {
-    constructor() {
-        this.elements = {};
-        this.bindElements();
-    }
+  constructor() {
+    this.elements = {};
+    this.bindElements();
+  }
 
-    bindElements() {
-        this.elements.resultSection = document.getElementById("result-section");
-        this.elements.fortuneResult = document.getElementById("fortune-result");
-        this.elements.greatFortuneResult = document.getElementById("great-fortune-result");
-        this.elements.savePngBtn = document.getElementById("save-png-btn");
-    }
+  bindElements() {
+    this.elements.resultSection = document.getElementById("result-section");
+    this.elements.fortuneResult = document.getElementById("fortune-result");
+    this.elements.greatFortuneResult = document.getElementById("great-fortune-result");
+    this.elements.savePngBtn = document.getElementById("save-png-btn");
+  }
 
-    /**
-     * 結果を表示してセクションを表示状態にする
-     */
-    showResults(fortune, juuniunResults, tsuuhenResults, greatFortuneCycles, year) {
-        this.renderFortuneTable(fortune, juuniunResults, tsuuhenResults);
-        this.renderGreatFortune(greatFortuneCycles, year);
-        this.elements.resultSection.style.display = "block";
-    }
+  /**
+   * 結果を表示してセクションを表示状態にする
+   */
+  showResults(fortune, juuniunResults, tsuuhenResults, greatFortuneCycles, year) {
+    this.renderFortuneTable(fortune, juuniunResults, tsuuhenResults);
+    this.renderGreatFortune(greatFortuneCycles, year);
+    this.elements.resultSection.style.display = "block";
+  }
 
-    /**
-     * 結果をクリアして非表示にする
-     */
-    clear() {
-        this.elements.fortuneResult.innerHTML = "";
-        this.elements.greatFortuneResult.innerHTML = "";
-        this.elements.resultSection.style.display = "none";
-    }
+  /**
+   * 結果をクリアして非表示にする
+   */
+  clear() {
+    this.elements.fortuneResult.innerHTML = "";
+    this.elements.greatFortuneResult.innerHTML = "";
+    this.elements.resultSection.style.display = "none";
+  }
 
-    /**
-     * 命式テーブルのレンダリング
-     */
-    renderFortuneTable(fortune, juuniunResults, tsuuhenResults) {
-        const tableHTML = `
+  /**
+   * 命式テーブルのレンダリング
+   */
+  renderFortuneTable(fortune, juuniunResults, tsuuhenResults) {
+    const tableHTML = `
       <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
         <thead>
           <tr style="background-color: #f0f0f0;">
@@ -126,31 +126,32 @@ export class ResultRenderer {
       </table>
     `;
 
-        this.elements.fortuneResult.innerHTML = tableHTML;
+    this.elements.fortuneResult.innerHTML = tableHTML;
+  }
+
+  formatHiddenStems(hiddenStems) {
+    if (!hiddenStems || hiddenStems.length === 0) {
+      return "-";
+    }
+    // hiddenStemsは文字列の配列（例: ['甲', '丙', '戊']）
+    return hiddenStems.join(" ");
+  }
+
+  /**
+   * 大運のレンダリング
+   */
+  renderGreatFortune(cycles, birthYear) {
+    if (!cycles || cycles.length === 0) {
+      this.elements.greatFortuneResult.innerHTML = "<p>大運情報なし</p>";
+      return;
     }
 
-    formatHiddenStems(hiddenStems) {
-        if (!hiddenStems || hiddenStems.length === 0) {
-            return "-";
-        }
-        return hiddenStems.map((hs) => hs.stem).join(" ");
-    }
+    const cardsHTML = cycles
+      .map((cycle) => {
+        const startYear = birthYear + cycle.ageStart;
+        const endYear = birthYear + cycle.ageEnd;
 
-    /**
-     * 大運のレンダリング
-     */
-    renderGreatFortune(cycles, birthYear) {
-        if (!cycles || cycles.length === 0) {
-            this.elements.greatFortuneResult.innerHTML = "<p>大運情報なし</p>";
-            return;
-        }
-
-        const cardsHTML = cycles
-            .map((cycle) => {
-                const startYear = birthYear + cycle.ageStart;
-                const endYear = birthYear + cycle.ageEnd;
-
-                return `
+        return `
       <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 10px; background-color: #f9f9f9;">
         <div style="font-weight: bold; margin-bottom: 4px;">
           ${cycle.ageStart}歳 - ${cycle.ageEnd}歳
@@ -163,16 +164,16 @@ export class ResultRenderer {
         </div>
       </div>
     `;
-            })
-            .join("");
+      })
+      .join("");
 
-        this.elements.greatFortuneResult.innerHTML = `
+    this.elements.greatFortuneResult.innerHTML = `
       <h3 style="margin-top: 20px; margin-bottom: 12px;">大運</h3>
       ${cardsHTML}
     `;
-    }
+  }
 
-    onSavePNG(handler) {
-        this.elements.savePngBtn.addEventListener("click", handler);
-    }
+  onSavePNG(handler) {
+    this.elements.savePngBtn.addEventListener("click", handler);
+  }
 }
