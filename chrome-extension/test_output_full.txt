@@ -1,0 +1,37 @@
+
+> test
+> node tests/run_tests.js
+
+噫 Starting Test Runner...
+found 5 test files.
+
+塘 core\FortuneCalculator.test.js
+  笨・FortuneCalculator.initialize loads data
+  笨・FortuneCalculator.calculateFortune returns correct structure
+  笨・FortuneCalculator.calculateFortune handles standard date (2023-06-15)
+
+塘 core\GreatFortuneCalculator.test.js
+  笨・GreatFortuneCalculator.initialize
+  笶・GreatFortuneCalculator.calculateStartAge
+     Error:  Expected "3" but got "10"
+  笨・GreatFortuneCalculator.calculateCycles
+
+塘 core\JuuniunCalculator.test.js
+  笨・JuuniunCalculator.initialize loads data
+  笨・JuuniunCalculator.calculateJuuniun returns correct values
+  笨・JuuniunCalculator.calculateForPillars
+
+塘 core\TsuuhenCalculator.test.js
+  笨・TsuuhenCalculator.setup
+  笨・TsuuhenCalculator.calculateTsuuhen calculates specific cases
+  笨・TsuuhenCalculator.calculateForPillars returns correct structure
+
+塘 utils\DateUtils.test.js
+  笨・DateUtils.isValidDate checks valid dates
+  笨・DateUtils.isValidDate checks invalid dates
+  笨・DateUtils.getDaysDifference calculates correctly
+  笨・DateUtils.getDaysDifference handles reverse order
+
+---------------------------------------------------
+Test Summary: 15 passed, 1 failed.
+---------------------------------------------------

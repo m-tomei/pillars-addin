@@ -120,10 +120,12 @@ export class GreatFortuneCalculator {
   _getNextSolarTerm(year, month, day) {
     const birthDate = DateUtils.createDate(year, month, day, 12, 0);
 
-    // 節気の順序（立春から始まる）
+    // 節気の順序（1月の小寒から12月の大雪まで日付順）
+    // Note: getSolarTermDateTime returns the date in the specified year.
+    // 小寒 is in Jan, 立春 is in Feb, ..., 大雪 is in Dec.
     const solarTerms = [
-      '立春', '啓蟄', '清明', '立夏', '芒種', '小暑',
-      '立秋', '白露', '寒露', '立冬', '大雪', '小寒'
+      '小寒', '立春', '啓蟄', '清明', '立夏', '芒種', '小暑',
+      '立秋', '白露', '寒露', '立冬', '大雪'
     ];
 
     // 現在の年の全節気をチェック
@@ -151,10 +153,10 @@ export class GreatFortuneCalculator {
   _getPreviousSolarTerm(year, month, day) {
     const birthDate = DateUtils.createDate(year, month, day, 12, 0);
 
-    // 節気の順序（小寒から逆順）
+    // 節気の順序（12月の大雪から1月の小寒まで日付逆順）
     const solarTerms = [
-      '小寒', '大雪', '立冬', '寒露', '白露', '立秋',
-      '小暑', '芒種', '立夏', '清明', '啓蟄', '立春'
+      '大雪', '立冬', '寒露', '白露', '立秋', '小暑',
+      '芒種', '立夏', '清明', '啓蟄', '立春', '小寒'
     ];
 
     // 現在の年の全節気を逆順にチェック

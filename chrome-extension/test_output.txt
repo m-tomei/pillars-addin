@@ -1,0 +1,21 @@
+
+> test
+> node tests/run_tests.js
+
+噫 Starting Test Runner...
+found 2 test files.
+
+塘 core\FortuneCalculator.test.js
+  笨・FortuneCalculator.initialize loads data
+  笨・FortuneCalculator.calculateFortune returns correct structure
+  笨・FortuneCalculator.calculateFortune handles standard date (2023-06-15)
+
+塘 utils\DateUtils.test.js
+  笨・DateUtils.isValidDate checks valid dates
+  笨・DateUtils.isValidDate checks invalid dates
+  笨・DateUtils.getDaysDifference calculates correctly
+  笨・DateUtils.getDaysDifference handles reverse order
+
+---------------------------------------------------
+Test Summary: 7 passed, 0 failed.
+---------------------------------------------------
