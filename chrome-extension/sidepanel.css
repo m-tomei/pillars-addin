@@ -1,0 +1,332 @@
+/* リセット */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f5f5f5;
+}
+
+.container {
+  max-width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ヘッダー */
+header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* メインコンテンツ */
+main {
+  flex: 1;
+  padding: 16px;
+}
+
+/* セクション */
+section {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #667eea;
+}
+
+/* フォーム */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #555;
+}
+
+.optional {
+  font-size: 12px;
+  color: #999;
+  font-weight: normal;
+}
+
+.required {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* 日付入力 */
+.date-inputs,
+.time-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-inputs input,
+.time-inputs input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.date-inputs input:focus,
+.time-inputs input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.date-inputs span,
+.time-inputs span {
+  color: #666;
+}
+
+/* 性別入力 */
+.gender-inputs {
+  display: flex;
+  gap: 16px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+/* テキスト入力 */
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ボタングループ */
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* ボタン */
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  flex: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+  background: white;
+  color: #667eea;
+  border: 1px solid #667eea;
+}
+
+.btn-secondary:hover {
+  background: #f8f9ff;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #3498db;
+  color: white;
+}
+
+.btn-small:hover {
+  background: #2980b9;
+}
+
+/* エラーメッセージ */
+.error-message {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fee;
+  border-left: 4px solid #e74c3c;
+  color: #c0392b;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* 結果セクション */
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* 命式テーブル */
+.fortune-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+
+.fortune-table th,
+.fortune-table td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.fortune-table th {
+  background: #667eea;
+  color: white;
+  font-weight: 600;
+}
+
+.fortune-table .stem-row td {
+  font-size: 20px;
+  font-weight: bold;
+  color: #c0392b;
+}
+
+.fortune-table .branch-row td {
+  font-size: 20px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.fortune-table .hidden-stems-row td {
+  font-size: 11px;
+  color: #7f8c8d;
+}
+
+.fortune-table .juuniun-row td,
+.fortune-table .tsuuhen-row td {
+  font-size: 12px;
+  color: #555;
+}
+
+/* 大運 */
+.great-fortune-header {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #ecf0f1;
+  border-radius: 4px;
+}
+
+.great-fortune-header p {
+  font-size: 14px;
+  color: #555;
+}
+
+.great-fortune-header strong {
+  color: #667eea;
+  font-size: 16px;
+}
+
+.great-fortune-cycles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.cycle-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 8px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.cycle-card:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cycle-number {
+  font-size: 10px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.cycle-age {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.cycle-jiazi {
+  font-size: 16px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* フッター */
+footer {
+  background: #2c3e50;
+  color: white;
+  text-align: center;
+  padding: 12px;
+  font-size: 12px;
+}
+
+/* レスポンシブ */
+@media (max-width: 360px) {
+  .date-inputs,
+  .time-inputs {
+    flex-wrap: wrap;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "stems": {
+    "甲": {
+      "index": 0,
+      "element": "木",
+      "yin_yang": "陽",
+      "name_ja": "甲",
+      "name_en": "Ko"
+    },
+    "乙": {
+      "index": 1,
+      "element": "木",
+      "yin_yang": "陰",
+      "name_ja": "乙",
+      "name_en": "Otsu"
+    },
+    "丙": {
+      "index": 2,
+      "element": "火",
+      "yin_yang": "陽",
+      "name_ja": "丙",
+      "name_en": "Hei"
+    },
+    "丁": {
+      "index": 3,
+      "element": "火",
+      "yin_yang": "陰",
+      "name_ja": "丁",
+      "name_en": "Tei"
+    },
+    "戊": {
+      "index": 4,
+      "element": "土",
+      "yin_yang": "陽",
+      "name_ja": "戊",
+      "name_en": "Bo"
+    },
+    "己": {
+      "index": 5,
+      "element": "土",
+      "yin_yang": "陰",
+      "name_ja": "己",
+      "name_en": "Ki"
+    },
+    "庚": {
+      "index": 6,
+      "element": "金",
+      "yin_yang": "陽",
+      "name_ja": "庚",
+      "name_en": "Ko"
+    },
+    "辛": {
+      "index": 7,
+      "element": "金",
+      "yin_yang": "陰",
+      "name_ja": "辛",
+      "name_en": "Shin"
+    },
+    "壬": {
+      "index": 8,
+      "element": "水",
+      "yin_yang": "陽",
+      "name_ja": "壬",
+      "name_en": "Jin"
+    },
+    "癸": {
+      "index": 9,
+      "element": "水",
+      "yin_yang": "陰",
+      "name_ja": "癸",
+      "name_en": "Ki"
+    }
+  },
+  "branches": {
+    "子": {
+      "index": 0,
+      "element": "水",
+      "yin_yang": "陽",
+      "hidden_stems": ["癸"],
+      "name_ja": "子",
+      "name_en": "Ne",
+      "animal": "鼠"
+    },
+    "丑": {
+      "index": 1,
+      "element": "土",
+      "yin_yang": "陰",
+      "hidden_stems": ["己", "癸", "辛"],
+      "name_ja": "丑",
+      "name_en": "Ushi",
+      "animal": "牛"
+    },
+    "寅": {
+      "index": 2,
+      "element": "木",
+      "yin_yang": "陽",
+      "hidden_stems": ["甲", "丙", "戊"],
+      "name_ja": "寅",
+      "name_en": "Tora",
+      "animal": "虎"
+    },
+    "卯": {
+      "index": 3,
+      "element": "木",
+      "yin_yang": "陰",
+      "hidden_stems": ["乙"],
+      "name_ja": "卯",
+      "name_en": "U",
+      "animal": "兎"
+    },
+    "辰": {
+      "index": 4,
+      "element": "土",
+      "yin_yang": "陽",
+      "hidden_stems": ["戊", "乙", "癸"],
+      "name_ja": "辰",
+      "name_en": "Tatsu",
+      "animal": "龍"
+    },
+    "巳": {
+      "index": 5,
+      "element": "火",
+      "yin_yang": "陰",
+      "hidden_stems": ["丙", "庚", "戊"],
+      "name_ja": "巳",
+      "name_en": "Mi",
+      "animal": "蛇"
+    },
+    "午": {
+      "index": 6,
+      "element": "火",
+      "yin_yang": "陽",
+      "hidden_stems": ["丁", "己"],
+      "name_ja": "午",
+      "name_en": "Uma",
+      "animal": "馬"
+    },
+    "未": {
+      "index": 7,
+      "element": "土",
+      "yin_yang": "陰",
+      "hidden_stems": ["己", "丁", "乙"],
+      "name_ja": "未",
+      "name_en": "Hitsuji",
+      "animal": "羊"
+    },
+    "申": {
+      "index": 8,
+      "element": "金",
+      "yin_yang": "陽",
+      "hidden_stems": ["庚", "壬", "戊"],
+      "name_ja": "申",
+      "name_en": "Saru",
+      "animal": "猿"
+    },
+    "酉": {
+      "index": 9,
+      "element": "金",
+      "yin_yang": "陰",
+      "hidden_stems": ["辛"],
+      "name_ja": "酉",
+      "name_en": "Tori",
+      "animal": "鶏"
+    },
+    "戌": {
+      "index": 10,
+      "element": "土",
+      "yin_yang": "陽",
+      "hidden_stems": ["戊", "辛", "丁"],
+      "name_ja": "戌",
+      "name_en": "Inu",
+      "animal": "犬"
+    },
+    "亥": {
+      "index": 11,
+      "element": "水",
+      "yin_yang": "陰",
+      "hidden_stems": ["壬", "甲"],
+      "name_ja": "亥",
+      "name_en": "I",
+      "animal": "猪"
+    }
+  },
+  "sixty_jiazi": [
+    {"index": 0, "stem": "甲", "branch": "子", "name": "甲子"},
+    {"index": 1, "stem": "乙", "branch": "丑", "name": "乙丑"},
+    {"index": 2, "stem": "丙", "branch": "寅", "name": "丙寅"},
+    {"index": 3, "stem": "丁", "branch": "卯", "name": "丁卯"},
+    {"index": 4, "stem": "戊", "branch": "辰", "name": "戊辰"},
+    {"index": 5, "stem": "己", "branch": "巳", "name": "己巳"},
+    {"index": 6, "stem": "庚", "branch": "午", "name": "庚午"},
+    {"index": 7, "stem": "辛", "branch": "未", "name": "辛未"},
+    {"index": 8, "stem": "壬", "branch": "申", "name": "壬申"},
+    {"index": 9, "stem": "癸", "branch": "酉", "name": "癸酉"},
+    {"index": 10, "stem": "甲", "branch": "戌", "name": "甲戌"},
+    {"index": 11, "stem": "乙", "branch": "亥", "name": "乙亥"},
+    {"index": 12, "stem": "丙", "branch": "子", "name": "丙子"},
+    {"index": 13, "stem": "丁", "branch": "丑", "name": "丁丑"},
+    {"index": 14, "stem": "戊", "branch": "寅", "name": "戊寅"},
+    {"index": 15, "stem": "己", "branch": "卯", "name": "己卯"},
+    {"index": 16, "stem": "庚", "branch": "辰", "name": "庚辰"},
+    {"index": 17, "stem": "辛", "branch": "巳", "name": "辛巳"},
+    {"index": 18, "stem": "壬", "branch": "午", "name": "壬午"},
+    {"index": 19, "stem": "癸", "branch": "未", "name": "癸未"},
+    {"index": 20, "stem": "甲", "branch": "申", "name": "甲申"},
+    {"index": 21, "stem": "乙", "branch": "酉", "name": "乙酉"},
+    {"index": 22, "stem": "丙", "branch": "戌", "name": "丙戌"},
+    {"index": 23, "stem": "丁", "branch": "亥", "name": "丁亥"},
+    {"index": 24, "stem": "戊", "branch": "子", "name": "戊子"},
+    {"index": 25, "stem": "己", "branch": "丑", "name": "己丑"},
+    {"index": 26, "stem": "庚", "branch": "寅", "name": "庚寅"},
+    {"index": 27, "stem": "辛", "branch": "卯", "name": "辛卯"},
+    {"index": 28, "stem": "壬", "branch": "辰", "name": "壬辰"},
+    {"index": 29, "stem": "癸", "branch": "巳", "name": "癸巳"},
+    {"index": 30, "stem": "甲", "branch": "午", "name": "甲午"},
+    {"index": 31, "stem": "乙", "branch": "未", "name": "乙未"},
+    {"index": 32, "stem": "丙", "branch": "申", "name": "丙申"},
+    {"index": 33, "stem": "丁", "branch": "酉", "name": "丁酉"},
+    {"index": 34, "stem": "戊", "branch": "戌", "name": "戊戌"},
+    {"index": 35, "stem": "己", "branch": "亥", "name": "己亥"},
+    {"index": 36, "stem": "庚", "branch": "子", "name": "庚子"},
+    {"index": 37, "stem": "辛", "branch": "丑", "name": "辛丑"},
+    {"index": 38, "stem": "壬", "branch": "寅", "name": "壬寅"},
+    {"index": 39, "stem": "癸", "branch": "卯", "name": "癸卯"},
+    {"index": 40, "stem": "甲", "branch": "辰", "name": "甲辰"},
+    {"index": 41, "stem": "乙", "branch": "巳", "name": "乙巳"},
+    {"index": 42, "stem": "丙", "branch": "午", "name": "丙午"},
+    {"index": 43, "stem": "丁", "branch": "未", "name": "丁未"},
+    {"index": 44, "stem": "戊", "branch": "申", "name": "戊申"},
+    {"index": 45, "stem": "己", "branch": "酉", "name": "己酉"},
+    {"index": 46, "stem": "庚", "branch": "戌", "name": "庚戌"},
+    {"index": 47, "stem": "辛", "branch": "亥", "name": "辛亥"},
+    {"index": 48, "stem": "壬", "branch": "子", "name": "壬子"},
+    {"index": 49, "stem": "癸", "branch": "丑", "name": "癸丑"},
+    {"index": 50, "stem": "甲", "branch": "寅", "name": "甲寅"},
+    {"index": 51, "stem": "乙", "branch": "卯", "name": "乙卯"},
+    {"index": 52, "stem": "丙", "branch": "辰", "name": "丙辰"},
+    {"index": 53, "stem": "丁", "branch": "巳", "name": "丁巳"},
+    {"index": 54, "stem": "戊", "branch": "午", "name": "戊午"},
+    {"index": 55, "stem": "己", "branch": "未", "name": "己未"},
+    {"index": 56, "stem": "庚", "branch": "申", "name": "庚申"},
+    {"index": 57, "stem": "辛", "branch": "酉", "name": "辛酉"},
+    {"index": 58, "stem": "壬", "branch": "戌", "name": "壬戌"},
+    {"index": 59, "stem": "癸", "branch": "亥", "name": "癸亥"}
+  ]
+}
