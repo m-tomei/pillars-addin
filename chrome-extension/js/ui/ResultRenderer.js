@@ -40,86 +40,86 @@ export class ResultRenderer {
       <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
         <thead>
           <tr style="background-color: #f0f0f0;">
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">年柱</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">月柱</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">日柱</th>
             <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">時柱</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">日柱</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">月柱</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">年柱</th>
           </tr>
         </thead>
         <tbody>
           <!-- 天干 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${fortune.yearPillar.stem}
-            </td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${fortune.monthPillar.stem}
+              ${fortune.hourPillar ? fortune.hourPillar.stem : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
               ${fortune.dayPillar.stem}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${fortune.hourPillar ? fortune.hourPillar.stem : "-"}
+              ${fortune.monthPillar.stem}
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
+              ${fortune.yearPillar.stem}
             </td>
           </tr>
           <!-- 地支 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${fortune.yearPillar.branch}
-            </td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${fortune.monthPillar.branch}
+              ${fortune.hourPillar ? fortune.hourPillar.branch : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
               ${fortune.dayPillar.branch}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${fortune.hourPillar ? fortune.hourPillar.branch : "-"}
+              ${fortune.monthPillar.branch}
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
+              ${fortune.yearPillar.branch}
             </td>
           </tr>
           <!-- 蔵干 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
-              ${this.formatHiddenStems(fortune.yearPillar.hiddenStems)}
-            </td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
-              ${this.formatHiddenStems(fortune.monthPillar.hiddenStems)}
+              ${fortune.hourPillar ? this.formatHiddenStems(fortune.hourPillar.hiddenStems) : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
               ${this.formatHiddenStems(fortune.dayPillar.hiddenStems)}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
-              ${fortune.hourPillar ? this.formatHiddenStems(fortune.hourPillar.hiddenStems) : "-"}
+              ${this.formatHiddenStems(fortune.monthPillar.hiddenStems)}
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
+              ${this.formatHiddenStems(fortune.yearPillar.hiddenStems)}
             </td>
           </tr>
           <!-- 十二運 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.year ? juuniunResults.year.juuniun : "-"}
-            </td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.month ? juuniunResults.month.juuniun : "-"}
+              ${juuniunResults.hour ? juuniunResults.hour.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
               ${juuniunResults.day ? juuniunResults.day.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.hour ? juuniunResults.hour.juuniun : "-"}
+              ${juuniunResults.month ? juuniunResults.month.juuniun : "-"}
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
+              ${juuniunResults.year ? juuniunResults.year.juuniun : "-"}
             </td>
           </tr>
           <!-- 通変星 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.year ? tsuuhenResults.year.tsuuhen : "-"}
-            </td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.month ? tsuuhenResults.month.tsuuhen : "-"}
+              ${tsuuhenResults.hour ? tsuuhenResults.hour.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
               ${tsuuhenResults.day ? tsuuhenResults.day.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.hour ? tsuuhenResults.hour.tsuuhen : "-"}
+              ${tsuuhenResults.month ? tsuuhenResults.month.tsuuhen : "-"}
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
+              ${tsuuhenResults.year ? tsuuhenResults.year.tsuuhen : "-"}
             </td>
           </tr>
         </tbody>
