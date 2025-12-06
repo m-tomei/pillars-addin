@@ -152,14 +152,14 @@ export class ResultRenderer {
         const endYear = birthYear + cycle.ageEnd;
 
         return `
-      <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 10px; background-color: #f9f9f9;">
-        <div style="font-weight: bold; margin-bottom: 4px;">
+      <div class="cycle-card">
+        <div class="cycle-age">
           ${cycle.ageStart}歳 - ${cycle.ageEnd}歳
         </div>
-        <div style="font-size: 14px;">
-          天干: ${cycle.stem} / 地支: ${cycle.branch}
+        <div class="cycle-jiazi">
+          ${cycle.stem}${cycle.branch}
         </div>
-        <div style="font-size: 12px; color: #666; margin-top: 4px;">
+        <div style="font-size: 11px; color: #666; margin-top: 4px;">
           ${startYear}年 - ${endYear}年
         </div>
       </div>
@@ -168,8 +168,12 @@ export class ResultRenderer {
       .join("");
 
     this.elements.greatFortuneResult.innerHTML = `
-      <h3 style="margin-top: 20px; margin-bottom: 12px;">大運</h3>
-      ${cardsHTML}
+      <div class="great-fortune-header">
+        <strong>大運</strong>
+      </div>
+      <div class="great-fortune-cycles">
+        ${cardsHTML}
+      </div>
     `;
   }
 
