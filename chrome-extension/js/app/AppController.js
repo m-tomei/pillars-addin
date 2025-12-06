@@ -182,41 +182,39 @@ export class AppController {
      * PNG保存ハンドラ
      */
     async handleSavePNG() {
+        // ボタンへの参照を保持
+        const saveBtn = this.resultRenderer?.elements?.savePngBtn;
+
         try {
             this.formRenderer.hideError();
 
             // フォームの値からファイル名用の年を取得
-            // バリデーションエラーが出る可能性があるのでtry-catch内で
             const inputData = this.formRenderer.getValues();
             const year = inputData.year || "unknown";
 
-            const targetElement = this.resultRenderer.elements.resultSection;
+            const targetElement = this.resultRenderer?.elements?.resultSection;
 
             // 要素が表示されていない場合はエラー
-            if (targetElement.style.display === "none") {
+            if (!targetElement || targetElement.style.display === "none") {
                 throw new Error("保存する結果が表示されていません");
             }
 
             const filename = ImageExporter.generateFilename("fortune", year);
 
             // ボタンを一時的に隠す
-            if (this.resultRenderer.elements.savePngBtn) {
-                this.resultRenderer.elements.savePngBtn.style.display = "none";
+            if (saveBtn) {
+                saveBtn.style.display = "none";
             }
 
             await ImageExporter.exportToPNG(targetElement, filename);
 
-            // ボタンを戻す
-            if (this.resultRenderer.elements.savePngBtn) {
-                this.resultRenderer.elements.savePngBtn.style.display = "";
-            }
-
         } catch (error) {
             console.error("Save PNG error:", error);
             this.formRenderer.showError("PNG保存に失敗しました: " + error.message);
-            // ボタンを戻す（念のため）
-            if (this.resultRenderer && this.resultRenderer.elements.savePngBtn) {
-                this.resultRenderer.elements.savePngBtn.style.display = "";
+        } finally {
+            // ボタンを確実に戻す
+            if (saveBtn) {
+                saveBtn.style.display = "";
             }
         }
     }
