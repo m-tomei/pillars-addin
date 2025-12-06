@@ -196,7 +196,7 @@ export class AppController {
 
             // 要素が表示されていない場合はエラー
             if (!targetElement || targetElement.style.display === "none") {
-                throw new Error("保存する結果が表示されていません");
+                throw new Error("計算結果がありません。まず計算を実行してください。");
             }
 
             const filename = ImageExporter.generateFilename("fortune", year);
