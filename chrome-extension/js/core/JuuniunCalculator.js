@@ -6,7 +6,7 @@
  * 十二運は人生の運勢の流れを12段階で表す。
  */
 
-import { CalculationError } from '../utils/errors.js';
+import { CalculationError } from "../utils/errors.js";
 
 /**
  * 十二運計算機クラス
@@ -26,7 +26,7 @@ export class JuuniunCalculator {
    */
   constructor(dataLoader) {
     if (!dataLoader) {
-      throw new TypeError('dataLoaderは必須です');
+      throw new TypeError("dataLoaderは必須です");
     }
     this.dataLoader = dataLoader;
     this.juuniunData = null;
@@ -51,30 +51,30 @@ export class JuuniunCalculator {
       const masterData = await this.dataLoader.loadJuuniunMaster();
 
       if (!masterData.data) {
-        throw new CalculationError('十二運マスタデータが見つかりません');
+        throw new CalculationError("十二運マスタデータが見つかりません");
       }
 
       if (!masterData.reference) {
-        throw new CalculationError('十二運リファレンスデータが見つかりません');
+        throw new CalculationError("十二運リファレンスデータが見つかりません");
       }
 
       this.juuniunData = masterData.data;
-      this.juuniunOrder = masterData.reference['十二運の順序'];
-      this.juuniunMeanings = masterData.reference['意味'];
+      this.juuniunOrder = masterData.reference["十二運の順序"];
+      this.juuniunMeanings = masterData.reference["意味"];
 
       if (!this.juuniunOrder || !Array.isArray(this.juuniunOrder)) {
-        throw new CalculationError('十二運の順序データが不正です');
+        throw new CalculationError("十二運の順序データが不正です");
       }
 
-      if (!this.juuniunMeanings || typeof this.juuniunMeanings !== 'object') {
-        throw new CalculationError('十二運の意味データが不正です');
+      if (!this.juuniunMeanings || typeof this.juuniunMeanings !== "object") {
+        throw new CalculationError("十二運の意味データが不正です");
       }
     } catch (error) {
       if (error instanceof CalculationError) {
         throw error;
       }
       throw new CalculationError(
-        `十二運マスタデータの読み込みに失敗しました: ${error.message}`
+        `十二運マスタデータの読み込みに失敗しました: ${error.message}`,
       );
     }
   }
@@ -101,41 +101,47 @@ export class JuuniunCalculator {
    */
   calculateJuuniun(dayStem, branch) {
     if (!this.juuniunData) {
-      throw new CalculationError('計算機が初期化されていません。initialize()を呼び出してください。');
+      throw new CalculationError(
+        "計算機が初期化されていません。initialize()を呼び出してください。",
+      );
     }
 
-    if (!dayStem || typeof dayStem !== 'string') {
-      throw new CalculationError('無効な日干です: 日干は文字列である必要があります。');
+    if (!dayStem || typeof dayStem !== "string") {
+      throw new CalculationError(
+        "無効な日干です: 日干は文字列である必要があります。",
+      );
     }
 
     if (!(dayStem in this.juuniunData)) {
       throw new CalculationError(
         `無効な日干です: ${dayStem}。` +
-        '日干は十干（甲・乙・丙・丁・戊・己・庚・辛・壬・癸）のいずれかである必要があります。'
+          "日干は十干（甲・乙・丙・丁・戊・己・庚・辛・壬・癸）のいずれかである必要があります。",
       );
     }
 
     const stemData = this.juuniunData[dayStem];
 
-    if (!branch || typeof branch !== 'string') {
-      throw new CalculationError('無効な地支です: 地支は文字列である必要があります。');
+    if (!branch || typeof branch !== "string") {
+      throw new CalculationError(
+        "無効な地支です: 地支は文字列である必要があります。",
+      );
     }
 
     if (!(branch in stemData)) {
       throw new CalculationError(
         `無効な地支です: ${branch}。` +
-        '地支は十二支（子・丑・寅・卯・辰・巳・午・未・申・酉・戌・亥）のいずれかである必要があります。'
+          "地支は十二支（子・丑・寅・卯・辰・巳・午・未・申・酉・戌・亥）のいずれかである必要があります。",
       );
     }
 
     const juuniun = stemData[branch];
-    const meaning = this.juuniunMeanings[juuniun] || '';
+    const meaning = this.juuniunMeanings[juuniun] || "";
 
     return {
       dayStem,
       branch,
       juuniun,
-      meaning
+      meaning,
     };
   }
 
@@ -167,7 +173,7 @@ export class JuuniunCalculator {
       year: this.calculateJuuniun(dayStem, yearBranch),
       month: this.calculateJuuniun(dayStem, monthBranch),
       day: this.calculateJuuniun(dayStem, dayBranch),
-      hour: this.calculateJuuniun(dayStem, hourBranch)
+      hour: hourBranch ? this.calculateJuuniun(dayStem, hourBranch) : null,
     };
   }
 
@@ -186,18 +192,18 @@ export class JuuniunCalculator {
    */
   getJuuniunStrength(juuniun) {
     const strengthMap = {
-      '帝旺': 10,
-      '建禄': 8,
-      '冠帯': 7,
-      '長生': 6,
-      '養': 5,
-      '沐浴': 4,
-      '胎': 3,
-      '墓': 2,
-      '衰': 1,
-      '病': 1,
-      '死': 1,
-      '絶': 0
+      帝旺: 10,
+      建禄: 8,
+      冠帯: 7,
+      長生: 6,
+      養: 5,
+      沐浴: 4,
+      胎: 3,
+      墓: 2,
+      衰: 1,
+      病: 1,
+      死: 1,
+      絶: 0,
     };
 
     return strengthMap[juuniun] !== undefined ? strengthMap[juuniun] : -1;
@@ -216,7 +222,7 @@ export class JuuniunCalculator {
    * calculator.isProsperous('病');    // false
    */
   isProsperous(juuniun) {
-    const prosperousSet = new Set(['長生', '冠帯', '建禄', '帝旺']);
+    const prosperousSet = new Set(["長生", "冠帯", "建禄", "帝旺"]);
     return prosperousSet.has(juuniun);
   }
 
@@ -233,7 +239,7 @@ export class JuuniunCalculator {
    * calculator.isWeak('建禄');  // false
    */
   isWeak(juuniun) {
-    const weakSet = new Set(['衰', '病', '死', '墓', '絶']);
+    const weakSet = new Set(["衰", "病", "死", "墓", "絶"]);
     return weakSet.has(juuniun);
   }
 }

@@ -11,16 +11,16 @@ import {
   HOUR_BRANCHES,
   MONTH_TERM_TO_BRANCH,
   BRANCH_TO_MONTH_INDEX,
-  BASE_DATE_JIAZI_INDEX
-} from '../utils/constants.js';
+  BASE_DATE_JIAZI_INDEX,
+} from "../utils/constants.js";
 
 import {
   InvalidDateError,
   SolarTermNotFoundError,
-  CalculationError
-} from '../utils/errors.js';
+  CalculationError,
+} from "../utils/errors.js";
 
-import { DateUtils } from '../utils/dateUtils.js';
+import { DateUtils } from "../utils/dateUtils.js";
 
 /**
  * 命式計算クラス
@@ -46,7 +46,9 @@ export class FortuneCalculator {
       this.stemBranchData = await this.dataLoader.loadStemBranchMaster();
       this.solarTermsData = await this.dataLoader.loadSolarTerms();
     } catch (error) {
-      throw new CalculationError(`データの読み込みに失敗しました: ${error.message}`);
+      throw new CalculationError(
+        `データの読み込みに失敗しました: ${error.message}`,
+      );
     }
   }
 
@@ -59,7 +61,7 @@ export class FortuneCalculator {
    */
   getHiddenStems(branch) {
     if (!this.stemBranchData || !this.stemBranchData.branches) {
-      throw new CalculationError('干支データが初期化されていません');
+      throw new CalculationError("干支データが初期化されていません");
     }
 
     if (!this.stemBranchData.branches[branch]) {
@@ -79,7 +81,7 @@ export class FortuneCalculator {
    */
   getSolarTermDateTime(year, termName) {
     if (!this.solarTermsData || !this.solarTermsData.years) {
-      throw new CalculationError('節気データが初期化されていません');
+      throw new CalculationError("節気データが初期化されていません");
     }
 
     const yearStr = String(year);
@@ -112,7 +114,7 @@ export class FortuneCalculator {
     }
 
     if (!this.stemBranchData || !this.stemBranchData.sixty_jiazi) {
-      throw new CalculationError('干支データが初期化されていません');
+      throw new CalculationError("干支データが初期化されていません");
     }
 
     // 干支は60年周期
@@ -142,7 +144,7 @@ export class FortuneCalculator {
 
     // 立春の日時を取得
     try {
-      const risshun = this.getSolarTermDateTime(year, '立春');
+      const risshun = this.getSolarTermDateTime(year, "立春");
 
       // 立春前なら前年の干支
       if (inputDt < risshun) {
@@ -181,7 +183,13 @@ export class FortuneCalculator {
     const monthBranch = this._determineMonthBranch(year, inputDt);
 
     // 月干を計算（年干から月干を求める）
-    const { stem: yearStem } = this.calculateYearPillarWithDate(year, month, day, hour, minute);
+    const { stem: yearStem } = this.calculateYearPillarWithDate(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+    );
     const monthStem = this._calculateMonthStem(yearStem, monthBranch);
 
     return { stem: monthStem, branch: monthBranch };
@@ -274,22 +282,22 @@ export class FortuneCalculator {
    * @private
    */
   _handleEarlyYearCase(year, inputDt) {
-    const risshun = this.getSolarTermDateTime(year, '立春');
+    const risshun = this.getSolarTermDateTime(year, "立春");
 
     if (inputDt < risshun) {
       // 小寒と立春の間なら丑月、小寒前なら子月
       try {
-        const shokan = this.getSolarTermDateTime(year, '小寒');
-        return inputDt >= shokan ? '丑' : '子';
+        const shokan = this.getSolarTermDateTime(year, "小寒");
+        return inputDt >= shokan ? "丑" : "子";
       } catch (error) {
         if (error instanceof SolarTermNotFoundError) {
           // 小寒のデータがない場合は丑月とする（フォールバック）
-          return '丑';
+          return "丑";
         }
         throw error;
       }
     } else {
-      throw new CalculationError('月支の判定に失敗しました');
+      throw new CalculationError("月支の判定に失敗しました");
     }
   }
 
@@ -312,11 +320,16 @@ export class FortuneCalculator {
   _calculateMonthStem(yearStem, monthBranch) {
     // 年干による寅月の天干の対応
     const yinStemMap = {
-      '甲': '丙', '己': '丙',
-      '乙': '戊', '庚': '戊',
-      '丙': '庚', '辛': '庚',
-      '丁': '壬', '壬': '壬',
-      '戊': '甲', '癸': '甲'
+      甲: "丙",
+      己: "丙",
+      乙: "戊",
+      庚: "戊",
+      丙: "庚",
+      辛: "庚",
+      丁: "壬",
+      壬: "壬",
+      戊: "甲",
+      癸: "甲",
     };
 
     const yinStem = yinStemMap[yearStem];
@@ -358,7 +371,7 @@ export class FortuneCalculator {
     DateUtils.createDate(year, month, day, hour, minute);
 
     if (!this.stemBranchData || !this.stemBranchData.sixty_jiazi) {
-      throw new CalculationError('干支データが初期化されていません');
+      throw new CalculationError("干支データが初期化されていません");
     }
 
     // ========== 日柱計算の基準日 ==========
@@ -449,42 +462,62 @@ export class FortuneCalculator {
    */
   calculateFortune(year, month, day, hour, minute) {
     // 年柱
-    const yearPillar = this.calculateYearPillarWithDate(year, month, day, hour, minute);
+    const yearPillar = this.calculateYearPillarWithDate(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+    );
     const yearHidden = this.getHiddenStems(yearPillar.branch);
 
     // 月柱
-    const monthPillar = this.calculateMonthPillar(year, month, day, hour, minute);
+    const monthPillar = this.calculateMonthPillar(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+    );
     const monthHidden = this.getHiddenStems(monthPillar.branch);
 
     // 日柱（節入り時刻による補正のため時刻も渡す）
     const dayPillar = this.calculateDayPillar(year, month, day, hour, minute);
     const dayHidden = this.getHiddenStems(dayPillar.branch);
 
-    // 時柱
-    const hourPillar = this.calculateHourPillar(hour, minute, dayPillar.stem);
-    const hourHidden = this.getHiddenStems(hourPillar.branch);
+    // 時柱（時刻が指定されている場合のみ計算）
+    let hourPillarResult = null;
+    if (hour !== null && hour !== undefined) {
+      const hourPillar = this.calculateHourPillar(
+        hour,
+        minute || 0,
+        dayPillar.stem,
+      );
+      const hourHidden = this.getHiddenStems(hourPillar.branch);
+      hourPillarResult = {
+        stem: hourPillar.stem,
+        branch: hourPillar.branch,
+        hiddenStems: hourHidden,
+      };
+    }
 
     return {
       yearPillar: {
         stem: yearPillar.stem,
         branch: yearPillar.branch,
-        hiddenStems: yearHidden
+        hiddenStems: yearHidden,
       },
       monthPillar: {
         stem: monthPillar.stem,
         branch: monthPillar.branch,
-        hiddenStems: monthHidden
+        hiddenStems: monthHidden,
       },
       dayPillar: {
         stem: dayPillar.stem,
         branch: dayPillar.branch,
-        hiddenStems: dayHidden
+        hiddenStems: dayHidden,
       },
-      hourPillar: {
-        stem: hourPillar.stem,
-        branch: hourPillar.branch,
-        hiddenStems: hourHidden
-      }
+      hourPillar: hourPillarResult,
     };
   }
 }

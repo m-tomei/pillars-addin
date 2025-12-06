@@ -36,18 +36,23 @@ class AppController {
 
       // 計算エンジンの初期化
       this.fortuneCalculator = new FortuneCalculator(this.dataLoader);
-      this.greatFortuneCalculator = new GreatFortuneCalculator();
+      await this.fortuneCalculator.initialize();
+
+      this.greatFortuneCalculator = new GreatFortuneCalculator(
+        this.fortuneCalculator,
+      );
+      await this.greatFortuneCalculator.initialize();
+
       this.juuniunCalculator = new JuuniunCalculator(this.dataLoader);
-      this.tsuuhenCalculator = new TsuuhenCalculator(this.dataLoader);
+      await this.juuniunCalculator.initialize();
+
+      this.tsuuhenCalculator = new TsuuhenCalculator();
 
       // UI要素の取得
       this.setupUIElements();
 
       // イベントリスナーの登録
       this.setupEventListeners();
-
-      // データの事前読み込み（オプション）
-      await this.preloadData();
 
       this.initialized = true;
       console.log("Application initialized successfully");
@@ -159,13 +164,20 @@ class AppController {
 
       // 十二運計算
       const juuniunResults = this.juuniunCalculator.calculateForPillars(
-        fortune.pillars,
+        fortune.dayPillar.stem,
+        fortune.yearPillar.branch,
+        fortune.monthPillar.branch,
+        fortune.dayPillar.branch,
+        fortune.hourPillar ? fortune.hourPillar.branch : null,
       );
       console.log("Juuniun calculated:", juuniunResults);
 
       // 通変星計算
       const tsuuhenResults = this.tsuuhenCalculator.calculateForPillars(
-        fortune.pillars,
+        fortune.dayPillar.stem,
+        fortune.yearPillar.stem,
+        fortune.monthPillar.stem,
+        fortune.hourPillar ? fortune.hourPillar.stem : null,
       );
       console.log("Tsuuhen calculated:", tsuuhenResults);
 
@@ -174,14 +186,15 @@ class AppController {
         inputData.year,
         inputData.month,
         inputData.day,
+        inputData.hour,
+        inputData.minute,
         inputData.gender,
-        fortune.pillars.year,
       );
       console.log("Great fortune cycles calculated:", greatFortuneCycles);
 
       // 結果を表示
       this.renderFortuneTable(fortune, juuniunResults, tsuuhenResults);
-      this.renderGreatFortune(greatFortuneCycles);
+      this.renderGreatFortune(greatFortuneCycles, inputData.year);
 
       // 結果セクションを表示
       this.resultSection.style.display = "block";
@@ -195,8 +208,6 @@ class AppController {
    * 命式テーブルの表示
    */
   renderFortuneTable(fortune, juuniunResults, tsuuhenResults) {
-    const pillars = fortune.pillars;
-
     const tableHTML = `
       <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
         <thead>
@@ -211,76 +222,76 @@ class AppController {
           <!-- 天干 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.year.stem.kanji}
+              ${fortune.yearPillar.stem}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.month.stem.kanji}
+              ${fortune.monthPillar.stem}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.day.stem.kanji}
+              ${fortune.dayPillar.stem}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.hour ? pillars.hour.stem.kanji : "-"}
+              ${fortune.hourPillar ? fortune.hourPillar.stem : "-"}
             </td>
           </tr>
           <!-- 地支 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.year.branch.kanji}
+              ${fortune.yearPillar.branch}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.month.branch.kanji}
+              ${fortune.monthPillar.branch}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.day.branch.kanji}
+              ${fortune.dayPillar.branch}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
-              ${pillars.hour ? pillars.hour.branch.kanji : "-"}
+              ${fortune.hourPillar ? fortune.hourPillar.branch : "-"}
             </td>
           </tr>
           <!-- 蔵干 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
-              ${this.formatHiddenStems(pillars.year.branch.hiddenStems)}
+              ${this.formatHiddenStems(fortune.yearPillar.hiddenStems)}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
-              ${this.formatHiddenStems(pillars.month.branch.hiddenStems)}
+              ${this.formatHiddenStems(fortune.monthPillar.hiddenStems)}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
-              ${this.formatHiddenStems(pillars.day.branch.hiddenStems)}
+              ${this.formatHiddenStems(fortune.dayPillar.hiddenStems)}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
-              ${pillars.hour ? this.formatHiddenStems(pillars.hour.branch.hiddenStems) : "-"}
+              ${fortune.hourPillar ? this.formatHiddenStems(fortune.hourPillar.hiddenStems) : "-"}
             </td>
           </tr>
           <!-- 十二運 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.year || "-"}
+              ${juuniunResults.year ? juuniunResults.year.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.month || "-"}
+              ${juuniunResults.month ? juuniunResults.month.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.day || "-"}
+              ${juuniunResults.day ? juuniunResults.day.juuniun : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #fff8dc;">
-              ${juuniunResults.hour || "-"}
+              ${juuniunResults.hour ? juuniunResults.hour.juuniun : "-"}
             </td>
           </tr>
           <!-- 通変星 -->
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.year || "-"}
+              ${tsuuhenResults.year ? tsuuhenResults.year.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.month || "-"}
+              ${tsuuhenResults.month ? tsuuhenResults.month.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.day || "-"}
+              ${tsuuhenResults.day ? tsuuhenResults.day.tsuuhen : "-"}
             </td>
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #e6f3ff;">
-              ${tsuuhenResults.hour || "-"}
+              ${tsuuhenResults.hour ? tsuuhenResults.hour.tsuuhen : "-"}
             </td>
           </tr>
         </tbody>
@@ -303,28 +314,31 @@ class AppController {
   /**
    * 大運の表示
    */
-  renderGreatFortune(cycles) {
+  renderGreatFortune(cycles, birthYear) {
     if (!cycles || cycles.length === 0) {
       this.greatFortuneResult.innerHTML = "<p>大運情報なし</p>";
       return;
     }
 
     const cardsHTML = cycles
-      .map(
-        (cycle) => `
+      .map((cycle) => {
+        const startYear = birthYear + cycle.ageStart;
+        const endYear = birthYear + cycle.ageEnd;
+
+        return `
       <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 10px; background-color: #f9f9f9;">
         <div style="font-weight: bold; margin-bottom: 4px;">
-          ${cycle.startAge}歳 - ${cycle.endAge}歳
+          ${cycle.ageStart}歳 - ${cycle.ageEnd}歳
         </div>
         <div style="font-size: 14px;">
-          天干: ${cycle.stem.kanji} / 地支: ${cycle.branch.kanji}
+          天干: ${cycle.stem} / 地支: ${cycle.branch}
         </div>
         <div style="font-size: 12px; color: #666; margin-top: 4px;">
-          ${cycle.startYear}年 - ${cycle.endYear}年
+          ${startYear}年 - ${endYear}年
         </div>
       </div>
-    `,
-      )
+    `;
+      })
       .join("");
 
     this.greatFortuneResult.innerHTML = `
