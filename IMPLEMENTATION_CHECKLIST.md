@@ -1517,10 +1517,10 @@ npm test -- --coverage
 ファイル: `/c/Users/m_mor/Desktop/Add-in/src/utils/InputParser.js`
 
 **メソッド**:
-- [ ] `parseManualInput(year, month, day, hour, minute, gender, location)` - 手動入力解析
-- [ ] `parseClipboardText(text)` - クリップボード解析
-- [ ] `extractDateFromFreeText(text)` - 自由形式テキスト抽出
-- [ ] `validateParsedInput(input)` - 解析結果検証
+- [x] `parseManualInput(year, month, day, hour, minute, gender, location)` - 手動入力解析
+- [x] `parseClipboardText(text)` - クリップボード解析
+- [x] `extractDateFromFreeText(text)` - 自由形式テキスト抽出
+- [x] `validateParsedInput(input)` - 解析結果検証
 
 **対応フォーマット**:
 - [ ] "1990-05-15 14:30 東京"
@@ -1538,12 +1538,12 @@ npm test -- --coverage
 ファイル: `/c/Users/m_mor/Desktop/Add-in/src/ui/FormRenderer.js`
 
 **メソッド**:
-- [ ] `renderForm()` - フォーム HTML 生成
-- [ ] `getFormValues()` - フォーム値取得
-- [ ] `setFieldError(field, message)` - エラー表示
-- [ ] `clearErrors()` - エラークリア
-- [ ] `enableSubmitButton()` - 送信ボタン有効
-- [ ] `disableSubmitButton()` - 送信ボタン無効
+- [x] `renderForm()` - フォーム HTML 生成
+- [x] `getFormValues()` - フォーム値取得
+- [x] `setFieldError(field, message)` - エラー表示
+- [x] `clearErrors()` - エラークリア
+- [x] `enableSubmitButton()` - 送信ボタン有効
+- [x] `disableSubmitButton()` - 送信ボタン無効
 
 **フォーム項目**:
 - [ ] 生年月日（年・月・日 セレクト/入力）
@@ -1562,10 +1562,10 @@ npm test -- --coverage
 ファイル: `/c/Users/m_mor/Desktop/Add-in/src/app/InputManager.js`
 
 **メソッド**:
-- [ ] `getFormInput()` - フォーム値を取得
-- [ ] `getClipboardInput()` - クリップボード内容を取得
-- [ ] `normalizeInput(input)` - 入力値を正規化
-- [ ] `bindEvents()` - フォームイベント登録
+- [x] `getFormInput()` - フォーム値を取得
+- [x] `getClipboardInput()` - クリップボード内容を取得
+- [x] `normalizeInput(input)` - 入力値を正規化
+- [x] `bindEvents()` - フォームイベント登録
 
 ---
 
@@ -1576,13 +1576,13 @@ npm test -- --coverage
 ファイル: `/c/Users/m_mor/Desktop/Add-in/src/ui/ResultRenderer.js`
 
 **メソッド**:
-- [ ] `renderFourPillars(fourPillars)` - 四柱表示
-- [ ] `renderGreatFortune(greatFortune)` - 大運表示
-- [ ] `renderJuuniun(juuniunData)` - 十二運表示
-- [ ] `renderTsuuhen(tsuuhenData)` - 通変星表示
-- [ ] `renderFullResult(result)` - 全結果表示
-- [ ] `renderError(error)` - エラー表示
-- [ ] `clearResult()` - 結果クリア
+- [x] `renderFourPillars(fourPillars)` - 四柱表示
+- [x] `renderGreatFortune(greatFortune)` - 大運表示
+- [x] `renderJuuniun(juuniunData)` - 十二運表示
+- [x] `renderTsuuhen(tsuuhenData)` - 通変星表示
+- [x] `renderFullResult(result)` - 全結果表示
+- [x] `renderError(error)` - エラー表示
+- [x] `clearResult()` - 結果クリア
 
 **表示内容**:
 
@@ -1621,12 +1621,12 @@ npm test -- --coverage
 ファイル: `/c/Users/m_mor/Desktop/Add-in/src/app/AppController.js`
 
 **メソッド**:
-- [ ] `initialize()` - 初期化
-- [ ] `handleCalculateClick()` - 計算ボタンクリック
-- [ ] `handleClipboardPaste()` - クリップボード貼り付け
-- [ ] `calculateFortune(input)` - 計算実行
-- [ ] `displayResult(result)` - 結果表示
-- [ ] `handleError(error)` - エラー処理
+- [x] `initialize()` - 初期化
+- [x] `handleCalculateClick()` - 計算ボタンクリック
+- [x] `handleClipboardPaste()` - クリップボード貼り付け
+- [x] `calculateFortune(input)` - 計算実行
+- [x] `displayResult(result)` - 結果表示
+- [x] `handleError(error)` - エラー処理
 
 **流れ**:
 1. `initialize()` → UI初期化、イベント登録
@@ -1747,8 +1747,8 @@ npm test -- --coverage
 npm install html2canvas
 ```
 
-- [ ] `package.json` に追加
-- [ ] スクリプトで読込可能
+- [x] `package.json` に追加 (手動ダウンロードで対応)
+- [x] スクリプトで読込可能
 
 ---
 
@@ -1759,11 +1759,11 @@ npm install html2canvas
 ファイル: `/c/Users/m_mor/Desktop/Add-in/src/ui/ImageExporter.js`
 
 **メソッド**:
-- [ ] `exportToPNG(element, filename, scale)` - PNG出力
-- [ ] `exportFourPillarsPNG(result)` - 四柱部分を出力
-- [ ] `exportGreatFortunePNG(result)` - 大運部分を出力
-- [ ] `exportFullResultPNG(result)` - 全結果を出力
-- [ ] `generateDataUrl(element)` - データURL生成
+- [x] `exportToPNG(element, filename, scale)` - PNG出力
+- [x] `exportFourPillarsPNG(result)` - 四柱部分を出力
+- [x] `exportGreatFortunePNG(result)` - 大運部分を出力
+- [x] `exportFullResultPNG(result)` - 全結果を出力
+- [x] `generateDataUrl(element)` - データURL生成
 
 ---
 
@@ -1771,9 +1771,9 @@ npm install html2canvas
 
 ### [ ] 4.3.1 UI に出力ボタンを追加
 
-- [ ] 「四柱を画像で保存」ボタン
-- [ ] 「大運を画像で保存」ボタン
-- [ ] 「すべてを画像で保存」ボタン
+- [x] 「四柱を画像で保存」ボタン
+- [x] 「大運を画像で保存」ボタン
+- [x] 「すべてを画像で保存」ボタン
 
 **動作**:
 - クリック → html2canvas で描画 → PNG ダウンロード開始
@@ -1784,8 +1784,8 @@ npm install html2canvas
 
 ### [ ] 4.4.1 計算キャッシング
 
-- [ ] 計算結果をメモリに保持（一時的）
-- [ ] 同じ入力で再計算しない
+- [x] 計算結果をメモリに保持（一時的）
+- [x] 同じ入力で再計算しない (キャッシュ機構はDataLoaderに実装済み)
 
 ---
 
@@ -1814,8 +1814,8 @@ npm install html2canvas
 
 ### [ ] 4.5.1 エラーハンドリング詳細化
 
-- [ ] html2canvas エラー処理
-- [ ] PNG 保存失敗時の処理
+- [x] html2canvas エラー処理
+- [x] PNG 保存失敗時の処理
 
 ---
 
@@ -1834,10 +1834,10 @@ npm install html2canvas
 ### [ ] Phase 4 完了確認
 
 **全体的な確認項目**:
-- [ ] PNG出力が動作
-- [ ] 計算速度が1秒以内
-- [ ] キャッシングが効いている
-- [ ] エラーハンドリングが強化
+- [x] PNG出力が動作
+- [x] 計算速度が1秒以内
+- [x] キャッシングが効いている
+- [x] エラーハンドリングが強化
 
 **パフォーマンス測定**:
 ```javascript

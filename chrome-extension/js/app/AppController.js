@@ -8,6 +8,7 @@ import { JuuniunCalculator } from "../core/JuuniunCalculator.js";
 import { TsuuhenCalculator } from "../core/TsuuhenCalculator.js";
 import { FormRenderer } from "../ui/FormRenderer.js";
 import { ResultRenderer } from "../ui/ResultRenderer.js";
+import { ImageExporter } from "../ui/ImageExporter.js";
 import { InputManager } from "./InputManager.js";
 
 export class AppController {
@@ -81,7 +82,7 @@ export class AppController {
         // クリップボード貼り付け
         this.formRenderer.onPaste(this.handlePaste.bind(this));
 
-        // PNG保存 (Phase 4での実装だが、ボタン自体はPhase 2からあるためハンドラだけ用意)
+        // PNG保存
         this.resultRenderer.onSavePNG(this.handleSavePNG.bind(this));
     }
 
@@ -89,6 +90,7 @@ export class AppController {
      * 計算ハンドラ
      */
     async handleCalculate() {
+        console.time('calculation');
         try {
             this.formRenderer.hideError();
 
@@ -149,6 +151,8 @@ export class AppController {
         } catch (error) {
             console.error("Calculation error:", error);
             this.formRenderer.showError(error.message);
+        } finally {
+            console.timeEnd('calculation');
         }
     }
 
@@ -177,7 +181,43 @@ export class AppController {
     /**
      * PNG保存ハンドラ
      */
-    handleSavePNG() {
-        this.formRenderer.showError("PNG保存機能はPhase 4で実装予定です");
+    async handleSavePNG() {
+        try {
+            this.formRenderer.hideError();
+
+            // フォームの値からファイル名用の年を取得
+            // バリデーションエラーが出る可能性があるのでtry-catch内で
+            const inputData = this.formRenderer.getValues();
+            const year = inputData.year || "unknown";
+
+            const targetElement = this.resultRenderer.elements.resultSection;
+
+            // 要素が表示されていない場合はエラー
+            if (targetElement.style.display === "none") {
+                throw new Error("保存する結果が表示されていません");
+            }
+
+            const filename = ImageExporter.generateFilename("fortune", year);
+
+            // ボタンを一時的に隠す
+            if (this.resultRenderer.elements.savePngBtn) {
+                this.resultRenderer.elements.savePngBtn.style.display = "none";
+            }
+
+            await ImageExporter.exportToPNG(targetElement, filename);
+
+            // ボタンを戻す
+            if (this.resultRenderer.elements.savePngBtn) {
+                this.resultRenderer.elements.savePngBtn.style.display = "";
+            }
+
+        } catch (error) {
+            console.error("Save PNG error:", error);
+            this.formRenderer.showError("PNG保存に失敗しました: " + error.message);
+            // ボタンを戻す（念のため）
+            if (this.resultRenderer && this.resultRenderer.elements.savePngBtn) {
+                this.resultRenderer.elements.savePngBtn.style.display = "";
+            }
+        }
     }
 }
