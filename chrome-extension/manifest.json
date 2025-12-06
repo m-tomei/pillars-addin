@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "四柱推命 命式計算",
+  "version": "1.0.0",
+  "description": "四柱推命の命式と大運を計算するChrome拡張機能",
+  "permissions": [
+    "sidePanel",
+    "clipboardRead"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "四柱推命を開く"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

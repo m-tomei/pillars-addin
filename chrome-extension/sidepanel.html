@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>四柱推命 命式計算</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>四柱推命 命式計算</h1>
+    </header>
+
+    <main>
+      <!-- 入力フォーム -->
+      <section class="input-section">
+        <h2>生年月日・時刻入力</h2>
+        
+        <form id="fortune-form">
+          <!-- 生年月日 -->
+          <div class="form-group">
+            <label>生年月日</label>
+            <div class="date-inputs">
+              <input type="number" id="year" placeholder="年" min="1900" max="2100" required>
+              <span>年</span>
+              <input type="number" id="month" placeholder="月" min="1" max="12" required>
+              <span>月</span>
+              <input type="number" id="day" placeholder="日" min="1" max="31" required>
+              <span>日</span>
+            </div>
+          </div>
+
+          <!-- 出生時刻 -->
+          <div class="form-group">
+            <label>出生時刻 <span class="optional">(任意)</span></label>
+            <div class="time-inputs">
+              <input type="number" id="hour" placeholder="時" min="0" max="23">
+              <span>時</span>
+              <input type="number" id="minute" placeholder="分" min="0" max="59">
+              <span>分</span>
+            </div>
+          </div>
+
+          <!-- 性別 -->
+          <div class="form-group">
+            <label>性別 <span class="required">*</span></label>
+            <div class="gender-inputs">
+              <label class="radio-label">
+                <input type="radio" name="gender" value="男性" required>
+                <span>男性</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="gender" value="女性">
+                <span>女性</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 出生地 -->
+          <div class="form-group">
+            <label>出生地 <span class="optional">(任意)</span></label>
+            <input type="text" id="birthplace" placeholder="例：東京">
+          </div>
+
+          <!-- ボタン -->
+          <div class="button-group">
+            <button type="button" id="paste-btn" class="btn btn-secondary">
+              📋 ペースト
+            </button>
+            <button type="button" id="clear-btn" class="btn btn-secondary">
+              🗑️ クリア
+            </button>
+            <button type="submit" id="calculate-btn" class="btn btn-primary">
+              🔮 計算
+            </button>
+          </div>
+        </form>
+
+        <!-- エラー表示 -->
+        <div id="error-message" class="error-message" style="display: none;"></div>
+      </section>
+
+      <!-- 結果表示 -->
+      <section class="result-section" id="result-section" style="display: none;">
+        <div class="result-header">
+          <h2>命式</h2>
+          <button id="save-png-btn" class="btn btn-small">
+            💾 PNG保存
+          </button>
+        </div>
+
+        <!-- 命式テーブル -->
+        <div id="fortune-result"></div>
+
+        <!-- 大運 -->
+        <div id="great-fortune-result"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>四柱推命 命式計算 v1.0.0</p>
+    </footer>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
