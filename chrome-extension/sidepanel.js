@@ -36,18 +36,21 @@ class AppController {
 
       // 計算エンジンの初期化
       this.fortuneCalculator = new FortuneCalculator(this.dataLoader);
-      this.greatFortuneCalculator = new GreatFortuneCalculator();
+      await this.fortuneCalculator.initialize();
+
+      this.greatFortuneCalculator = new GreatFortuneCalculator(this.fortuneCalculator);
+      await this.greatFortuneCalculator.initialize();
+
       this.juuniunCalculator = new JuuniunCalculator(this.dataLoader);
-      this.tsuuhenCalculator = new TsuuhenCalculator(this.dataLoader);
+      await this.juuniunCalculator.initialize();
+
+      this.tsuuhenCalculator = new TsuuhenCalculator();
 
       // UI要素の取得
       this.setupUIElements();
 
       // イベントリスナーの登録
       this.setupEventListeners();
-
-      // データの事前読み込み（オプション）
-      await this.preloadData();
 
       this.initialized = true;
       console.log("Application initialized successfully");
@@ -159,13 +162,20 @@ class AppController {
 
       // 十二運計算
       const juuniunResults = this.juuniunCalculator.calculateForPillars(
-        fortune.pillars,
+        fortune.dayPillar.stem,
+        fortune.yearPillar.branch,
+        fortune.monthPillar.branch,
+        fortune.dayPillar.branch,
+        fortune.hourPillar.branch
       );
       console.log("Juuniun calculated:", juuniunResults);
 
       // 通変星計算
       const tsuuhenResults = this.tsuuhenCalculator.calculateForPillars(
-        fortune.pillars,
+        fortune.dayPillar.stem,
+        fortune.yearPillar.stem,
+        fortune.monthPillar.stem,
+        fortune.hourPillar.stem
       );
       console.log("Tsuuhen calculated:", tsuuhenResults);
 
@@ -174,8 +184,9 @@ class AppController {
         inputData.year,
         inputData.month,
         inputData.day,
-        inputData.gender,
-        fortune.pillars.year,
+        inputData.hour,
+        inputData.minute,
+        inputData.gender
       );
       console.log("Great fortune cycles calculated:", greatFortuneCycles);
 
