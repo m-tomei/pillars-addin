@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "timezone": "Asia/Tokyo",
   "engine": "pillars-addin chrome-extension FortuneCalculator/ByoyakuCalculator",
   "fixedAt": "2026-08-09",
@@ -104,32 +104,52 @@
     },
     {
       "id": "S-05",
-      "title": "雕 → 実装後は琢",
+      "title": "雕 → 四薬と処置ラベルを分離",
       "byoyakuEnabled": true,
       "r01Link": "R01-A",
-      "input": { "year": 1998, "month": 5, "day": 22, "hour": 10, "minute": 0, "gender": "女性" },
-      "nearestMonthTerm": { "name": "立夏", "datetime": "1998-05-07T09:00:00+09:00", "daysApart": 15.1 },
+      "input": { "year": 1993, "month": 10, "day": 20, "hour": 10, "minute": 0, "gender": "女性" },
+      "nearestMonthTerm": { "name": "寒露", "datetime": "1993-10-08T23:00:00+09:00", "daysApart": 11.5 },
       "expectedPillars": {
-        "year": { "stem": "戊", "branch": "寅" },
-        "month": { "stem": "丁", "branch": "巳" },
-        "day": { "stem": "己", "branch": "巳" },
+        "year": { "stem": "癸", "branch": "酉" },
+        "month": { "stem": "壬", "branch": "戌" },
+        "day": { "stem": "甲", "branch": "戌" },
         "hour": { "stem": "己", "branch": "巳" }
       },
       "expectedCurrent": {
-        "strength": "strong",
-        "kakkyoku": "偏印格",
+        "strength": "neutral",
+        "strengthScore": 2,
+        "kakkyoku": "正財格",
+        "isEstablished": true,
         "fourDisease": "雕",
         "fourMedicine": "損",
-        "disease": "偏印助劫",
-        "medicine": "官殺"
+        "disease": "印多洩財気",
+        "medicine": "財星",
+        "medicineExists": true,
+        "medicineLocation": "時干"
       },
-      "expectedAfterR01": { "fourMedicine": "琢" }
+      "expectedWeightedDistribution": {
+        "木": 0.0,
+        "火": 1.3,
+        "土": 3.4,
+        "金": 2.2,
+        "水": 2.2,
+        "heaviestElement": "土",
+        "heaviestRatio": 0.3736
+      },
+      "expectedAfterR01": {
+        "fourDisease": "雕",
+        "fourMedicine": null,
+        "treatmentMode": "琢",
+        "fourDiseaseElement": null,
+        "fourMedicineElement": null,
+        "treatmentElementsIncludes": ["木"]
+      }
     },
     {
       "id": "S-06",
-      "title": "卯月旺 → 実装後は長候補",
+      "title": "卯月土旺 → 長にしない反例",
       "byoyakuEnabled": true,
-      "r01Link": "R01-C",
+      "r01Link": "R01-F",
       "input": { "year": 1970, "month": 3, "day": 15, "hour": 10, "minute": 0, "gender": "男性" },
       "nearestMonthTerm": { "name": "啓蟄", "datetime": "1970-03-06T06:00:00+09:00", "daysApart": 9.3 },
       "expectedPillars": {
@@ -140,15 +160,71 @@
       },
       "expectedCurrent": {
         "strength": "strong",
+        "strengthScore": 4,
         "kakkyoku": "偏官格",
+        "isEstablished": true,
         "fourDisease": "旺",
         "fourMedicine": "損",
         "disease": "身旺殺軽",
         "medicine": "財星生殺"
       },
+      "expectedWeightedDistribution": {
+        "木": 1.4,
+        "火": 1.7,
+        "土": 3.7,
+        "金": 2.0,
+        "水": 0.0,
+        "heaviestElement": "土",
+        "heaviestRatio": 0.4205
+      },
       "expectedAfterR01": {
+        "fourDisease": "旺",
+        "fourDiseaseElement": "土",
+        "stage": "その他",
+        "fourMedicine": "損",
+        "fourMedicineElement": "木"
+      }
+    },
+    {
+      "id": "S-07",
+      "title": "卯月木旺 → 長の成立例",
+      "byoyakuEnabled": true,
+      "r01Link": "R01-C",
+      "input": { "year": 2003, "month": 3, "day": 12, "hour": 0, "minute": 0, "gender": "男性" },
+      "nearestMonthTerm": { "name": "啓蟄", "datetime": "2003-03-05T06:00:00+09:00", "daysApart": 6.8 },
+      "expectedPillars": {
+        "year": { "stem": "癸", "branch": "未" },
+        "month": { "stem": "乙", "branch": "卯" },
+        "day": { "stem": "甲", "branch": "申" },
+        "hour": { "stem": "甲", "branch": "子" }
+      },
+      "expectedCurrent": {
+        "strength": "strong",
+        "strengthScore": 8,
+        "kakkyoku": "陽刃格",
+        "isEstablished": true,
+        "fourDisease": "旺",
+        "fourMedicine": "損",
+        "disease": "陽刃比劫重畳",
+        "medicine": "官殺",
+        "medicineExists": true,
+        "medicineLocation": "日支蔵干"
+      },
+      "expectedWeightedDistribution": {
+        "木": 3.9,
+        "火": 0.5,
+        "土": 1.0,
+        "金": 0.7,
+        "水": 2.2,
+        "heaviestElement": "木",
+        "heaviestRatio": 0.4699
+      },
+      "expectedAfterR01": {
+        "fourDisease": "旺",
+        "fourDiseaseElement": "木",
+        "stage": "長養",
         "fourMedicine": "長",
-        "note": "病五行が木で卯月長養のときに長。條件非該当なら損のまま"
+        "fourMedicineElement": "金"
       }
     }
   ]

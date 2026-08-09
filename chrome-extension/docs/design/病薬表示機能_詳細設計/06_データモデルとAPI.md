@@ -12,7 +12,11 @@ ByoyakuResult {
   medicine: MedicineView
   summary: string
   fourDisease: '雕'|'枯'|'旺'|'弱'
-  fourMedicine: '損'|'益'|'生'|'長'|'琢'   // 琢=雕に対する対立導入
+  fourMedicine: '損'|'益'|'生'|'長'|null
+  fourDiseaseElement: string|null  // 四病分類の対象。代表診断のdisease.elementとは別
+  fourMedicineElement: string|null // 四薬分類の処方五行
+  treatmentMode: '琢'|null       // 四薬とは別。雕に対する対立導入
+  treatmentElements: string[]    // 雕で導入する対立五行。それ以外は空配列
 
   // --- 複数診断 ---
   diagnoses: DiagnosisItem[]
@@ -54,8 +58,9 @@ DiagnosisItem {
   medicine: MedicineView
   medicineSecondary?: MedicineView  // 調候併記時
   reason: string
-  fourDisease?: string              // 個別に持つ場合
-  fourMedicine?: string
+  fourDisease?: '雕'|'枯'|'旺'|'弱' // 個別に持つ場合
+  fourMedicine?: '損'|'益'|'生'|'長'|null
+  treatmentMode?: '琢'|null
 }
 ```
 
@@ -137,3 +142,5 @@ missing → CalculationError('病薬判定に必要なデータが不足して�
 ```
 
 `DaiunHyoukaCalculator` へ渡す前に `disease.element` / `medicine.element` のnullを許容する。気象病の不足側を病五行へ代入して互換性を装ってはならない。
+
+`fourMedicine` は名称どおり四薬の4値だけを許容する。雕のように四薬へ直接対応しない場合は `null` とし、説明用の処置は `treatmentMode`、導入五行は `treatmentElements` に保持する。四病・四薬分類の五行は `fourDiseaseElement` / `fourMedicineElement` に置き、具体診断の代表値である `disease.element` / `medicine.element` と混同しない。雕では害神が存在しないため `fourDiseaseElement=null` とする。
