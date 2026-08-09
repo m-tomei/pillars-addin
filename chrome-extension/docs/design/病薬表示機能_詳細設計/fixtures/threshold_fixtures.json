@@ -1,24 +1,64 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "fixedAt": "2026-08-09",
   "source": "閾値fixture表.md",
   "thresholds": {
-    "TH-1": { "name": "monthBoost", "value": 2.0, "appliesTo": "monthBranchMainQi" },
+    "TH-1": {
+      "name": "monthBoost",
+      "value": 2.0,
+      "appliesTo": "monthBranchMainQi",
+      "baseWeight": 0.7,
+      "expectedContribution": 1.4
+    },
     "TH-2": { "name": "congZhongOuRatio", "value": 0.4, "operator": ">=" },
     "TH-3": { "name": "witherScoreMax", "value": 1.5, "operator": "<" },
     "TH-4": { "name": "kishouHeatColdShift", "value": 2.0, "operator": "abs>=" },
     "TH-5": { "name": "kishouDryWet", "value": 1.5, "operator": "abs>=" },
     "TH-6": { "name": "bodyStrongOuScore", "value": 4, "operator": ">=", "andStrength": "strong" },
-    "TH-7": { "name": "chouyouBranches", "note": "see R-01 table" }
+    "TH-7": {
+      "name": "chouyouBranches",
+      "branches": {
+        "木": ["寅", "卯", "辰"],
+        "火": ["巳", "午", "未"],
+        "金": ["申", "酉", "戌"],
+        "水": ["亥", "子", "丑"],
+        "土": []
+      },
+      "earthPolicy": "initial-version: fourMedicine=損"
+    }
   },
+  "monthBoostCases": [
+    { "id": "TH1-none", "baseWeight": 0.7, "multiplier": 1.0, "expectedContribution": 0.7, "adopted": false },
+    { "id": "TH1-adopted", "baseWeight": 0.7, "multiplier": 2.0, "expectedContribution": 1.4, "adopted": true },
+    { "id": "TH1-sensitivity", "baseWeight": 0.7, "multiplier": 3.0, "expectedContribution": 2.1, "adopted": false }
+  ],
   "boundaries": [
     { "id": "TH2-before", "param": "TH-2", "input": 0.399, "expectOuFromRatio": false },
     { "id": "TH2-eq", "param": "TH-2", "input": 0.4, "expectOuFromRatio": true },
     { "id": "TH2-after", "param": "TH-2", "input": 0.401, "expectOuFromRatio": true },
-    { "id": "TH4-before", "param": "TH-4", "input": 1.9, "expectShift": false },
-    { "id": "TH4-eq", "param": "TH-4", "input": 2.0, "expectShift": true },
-    { "id": "TH5-before", "param": "TH-5", "input": 1.4, "expectDry": false },
-    { "id": "TH5-eq", "param": "TH-5", "input": 1.5, "expectDry": true }
+
+    { "id": "TH3-before", "param": "TH-3", "input": 1.499, "expectWitherFromScore": true },
+    { "id": "TH3-eq", "param": "TH-3", "input": 1.5, "expectWitherFromScore": false },
+    { "id": "TH3-after", "param": "TH-3", "input": 1.501, "expectWitherFromScore": false },
+
+    { "id": "TH4-hot-before", "param": "TH-4", "input": 1.9, "expectShift": false, "expectDirection": null },
+    { "id": "TH4-hot-eq", "param": "TH-4", "input": 2.0, "expectShift": true, "expectDirection": "hotter" },
+    { "id": "TH4-hot-after", "param": "TH-4", "input": 2.1, "expectShift": true, "expectDirection": "hotter" },
+    { "id": "TH4-cold-before", "param": "TH-4", "input": -1.9, "expectShift": false, "expectDirection": null },
+    { "id": "TH4-cold-eq", "param": "TH-4", "input": -2.0, "expectShift": true, "expectDirection": "colder" },
+    { "id": "TH4-cold-after", "param": "TH-4", "input": -2.1, "expectShift": true, "expectDirection": "colder" },
+
+    { "id": "TH5-dry-before", "param": "TH-5", "input": 1.4, "expectHumidity": "neutral" },
+    { "id": "TH5-dry-eq", "param": "TH-5", "input": 1.5, "expectHumidity": "dry" },
+    { "id": "TH5-dry-after", "param": "TH-5", "input": 1.6, "expectHumidity": "dry" },
+    { "id": "TH5-wet-before", "param": "TH-5", "input": -1.4, "expectHumidity": "neutral" },
+    { "id": "TH5-wet-eq", "param": "TH-5", "input": -1.5, "expectHumidity": "wet" },
+    { "id": "TH5-wet-after", "param": "TH-5", "input": -1.6, "expectHumidity": "wet" },
+
+    { "id": "TH6-score-before", "param": "TH-6", "input": { "strength": "strong", "score": 3 }, "expectOuFromBody": false },
+    { "id": "TH6-score-eq", "param": "TH-6", "input": { "strength": "strong", "score": 4 }, "expectOuFromBody": true },
+    { "id": "TH6-score-after", "param": "TH-6", "input": { "strength": "strong", "score": 5 }, "expectOuFromBody": true },
+    { "id": "TH6-strength-guard", "param": "TH-6", "input": { "strength": "weak", "score": 4 }, "expectOuFromBody": false }
   ],
-  "linkedScenarios": ["S-02", "S-03", "S-04", "S-05", "S-06"]
+  "linkedScenarios": ["S-02", "S-03", "S-04", "S-05", "S-06", "S-07"]
 }
