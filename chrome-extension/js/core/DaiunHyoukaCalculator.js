@@ -124,11 +124,11 @@ export class DaiunHyoukaCalculator {
       // 判定
       const judgment = this._scoreToJudgment(totalScore);
 
-      // 理由テキスト
+      // 理由テキスト（降格薬はスコア同様に役割表示からも除外）
       const reason = this._buildReason(
         cycle.stem, stemElement, stemTsuuhen.tsuuhen, stemScore,
         cycle.branch, branchElement, branchScore,
-        gaitouType, medicineElements, diseaseElement
+        gaitouType, medicineElements, diseaseElement, cautionElements
       );
 
       return {
@@ -214,9 +214,13 @@ export class DaiunHyoukaCalculator {
    */
   _buildReason(stem, stemEl, stemTsuuhen, stemScore,
                branch, branchEl, branchScore,
-               gaitouType, medicineElements, diseaseElement) {
-    const stemRole = this._describeRole(stemEl, medicineElements, diseaseElement);
-    const branchRole = this._describeRole(branchEl, medicineElements, diseaseElement);
+               gaitouType, medicineElements, diseaseElement, cautionElements = []) {
+    const stemRole = this._describeRole(
+      stemEl, medicineElements, diseaseElement, cautionElements
+    );
+    const branchRole = this._describeRole(
+      branchEl, medicineElements, diseaseElement, cautionElements
+    );
 
     let text = `天干 ${stem}（${stemTsuuhen}・${stemEl}）→ ${stemRole}【動】、`;
     text += `地支 ${branch}（${branchEl}）→ ${branchRole}【静】。`;
@@ -239,12 +243,15 @@ export class DaiunHyoukaCalculator {
    * 五行の役割を簡潔に記述
    * @private
    */
-  _describeRole(element, medicineElements, diseaseElement) {
+  _describeRole(element, medicineElements, diseaseElement, cautionElements = []) {
     if (!element) return '不明';
     const roles = [];
-    if (medicineElements.includes(element)) roles.push('薬の五行');
+    const isCaution = cautionElements.includes(element);
+    if (!isCaution && medicineElements.includes(element)) roles.push('薬の五行');
     if (element === diseaseElement) roles.push('病の五行');
-    if (medicineElements.some(m => GENERATE_CYCLE[element] === m)) roles.push('薬を生む');
+    if (!isCaution && medicineElements.some(m => GENERATE_CYCLE[element] === m)) {
+      roles.push('薬を生む');
+    }
     if (GENERATE_CYCLE[element] === diseaseElement) roles.push('病を生む');
     if (CONTROL_CYCLE[element] === diseaseElement) roles.push('病を剋す');
     if (medicineElements.some(m => CONTROL_CYCLE[element] === m)) roles.push('薬を剋す');

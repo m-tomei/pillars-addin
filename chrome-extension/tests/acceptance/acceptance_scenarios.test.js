@@ -14,6 +14,7 @@ import { KeizenAnalyzer } from '../../js/core/KeizenAnalyzer.js';
 import { DaiunHyoukaCalculator } from '../../js/core/DaiunHyoukaCalculator.js';
 import { getByoyakuPipelinePlan, runOptionalDiagnostics } from '../../js/app/byoyakuPipeline.js';
 import { ResultRenderer } from '../../js/ui/ResultRenderer.js';
+import { STEM_ELEMENTS } from '../../js/utils/constants.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, '../../data');
@@ -348,10 +349,14 @@ test('Acceptance S-05 - 雕は四薬null・処置琢', async () => {
 
 test('Acceptance S-06 - 卯月土旺は損維持・最終薬は官殺', async () => {
     const scenario = scenarios.find(s => s.id === 'S-06');
-    const { fortune, optional } = await runScenario(scenario);
+    // fixture入力 1970-03-15 10:00 を直接使う（手動入力と同一）
+    assert.deepStrictEqual(scenario.input, {
+        year: 1970, month: 3, day: 15, hour: 10, minute: 0, gender: '男性'
+    });
+    const { fortune, greatFortuneCycles, optional } = await runScenario(scenario);
     assertPillars(fortune, scenario.expectedPillars, 'S-06');
 
-    const { kakkyokuResult, byoyakuResult } = optional;
+    const { kakkyokuResult, byoyakuResult, daiunEvaluations } = optional;
     assert.strictEqual(kakkyokuResult.kakkyoku, scenario.expectedCurrent.kakkyoku);
     const after = scenario.expectedAfterR01;
     assert.strictEqual(byoyakuResult.fourDisease, after.fourDisease);
@@ -370,6 +375,45 @@ test('Acceptance S-06 - 卯月土旺は損維持・最終薬は官殺', async ()
     }
     for (const el of t03f.kikiKiIncludes) {
         assert.ok(byoyakuResult.kiki.ki.some(item => item.element === el), `喜に${el}`);
+    }
+
+    // fixture由来の実大運まで検証（T-03f: 金吉・降格土は非吉／理由矛盾なし）
+    assert.ok(Array.isArray(daiunEvaluations) && daiunEvaluations.length > 0, '大運評価あり');
+    assert.strictEqual(daiunEvaluations.length, greatFortuneCycles.length);
+    const metalCycles = [];
+    const earthStemCycles = [];
+    for (let i = 0; i < greatFortuneCycles.length; i++) {
+        const cycle = greatFortuneCycles[i];
+        const evalResult = daiunEvaluations[i];
+        const stemEl = STEM_ELEMENTS[cycle.stem];
+        if (stemEl === '金') metalCycles.push(evalResult);
+        if (stemEl === '土') earthStemCycles.push(evalResult);
+    }
+    assert.ok(metalCycles.length > 0, 'fixture大運に金干がある');
+    assert.ok(earthStemCycles.length > 0, 'fixture大運に土干がある');
+    assert.ok(
+        metalCycles.every(e => ['大吉', '吉', '小吉'].includes(e.judgment)),
+        '金干大運は吉寄り'
+    );
+    for (const earth of earthStemCycles) {
+        assert.ok(
+            !['大吉', '吉', '小吉'].includes(earth.judgment),
+            `土干大運を吉にしない: ${earth.judgment}`
+        );
+        assert.ok(
+            !String(earth.reason || '').includes('薬を生む'),
+            `土干理由に薬を生むを出さない: ${earth.reason}`
+        );
+        assert.ok(
+            !String(earth.reason || '').includes('薬の五行'),
+            `土干理由に薬の五行を出さない: ${earth.reason}`
+        );
+    }
+    for (const evalResult of daiunEvaluations) {
+        assert.ok(
+            !/（土）→[^。]*薬を生む/.test(String(evalResult.reason || '')),
+            `降格土の役割表示に薬を生むを出さない: ${evalResult.reason}`
+        );
     }
 
     createDomStub();
