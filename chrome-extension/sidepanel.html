@@ -63,6 +63,15 @@
             <input type="text" id="birthplace" placeholder="例：東京">
           </div>
 
+          <!-- 病薬オプション（計算パイプライン分岐） -->
+          <div class="form-group option-group">
+            <label class="checkbox-label" for="byoyaku-option">
+              <input type="checkbox" id="byoyaku-option">
+              <span>病薬を表示する（命理正宗）</span>
+            </label>
+            <p class="option-hint">命式の病と薬を判定します</p>
+          </div>
+
           <!-- ボタン -->
           <div class="button-group">
             <button type="button" id="paste-btn" class="btn btn-secondary">
@@ -93,20 +102,14 @@
         <!-- 命式テーブル -->
         <div id="fortune-result"></div>
 
-        <!-- 格局・病薬診断 -->
-        <div id="kakkyoku-byoyaku-section">
-          <div class="toggle-row">
-            <label class="toggle-label" for="kakkyoku-toggle">格局・病薬診断</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="kakkyoku-toggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+        <!-- 病薬診断（オプションON時のみ表示。旧#kakkyoku-toggleは廃止） -->
+        <div id="kakkyoku-byoyaku-section" style="display: none;">
+          <h3 class="section-subtitle">病薬診断</h3>
           <div id="kakkyoku-byoyaku-result"></div>
         </div>
 
-        <!-- 合冲分析 -->
-        <div id="gouchuu-section" style="display: none;">
+        <!-- 合冲分析（D-02: 内部計算のみ。UI非表示を維持） -->
+        <div id="gouchuu-section" style="display: none;" hidden>
           <div class="toggle-row">
             <label class="toggle-label" for="gouchuu-toggle">合冲分析</label>
             <label class="toggle-switch">

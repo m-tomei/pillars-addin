@@ -28,7 +28,10 @@ export class InputManager {
 
         this.validateInput(parsed);
 
-        return parsed;
+        return {
+            ...parsed,
+            byoyakuEnabled: Boolean(rawValues.byoyakuEnabled)
+        };
     }
 
     /**

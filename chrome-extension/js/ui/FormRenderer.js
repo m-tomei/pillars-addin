@@ -21,6 +21,7 @@ export class FormRenderer {
         this.elements.minute = document.getElementById("minute");
         this.elements.genderInputs = document.getElementsByName("gender");
         this.elements.birthplace = document.getElementById("birthplace");
+        this.elements.byoyakuOption = document.getElementById("byoyaku-option");
 
         // ボタン
         this.elements.calculateBtn = document.getElementById("calculate-btn");
@@ -41,6 +42,7 @@ export class FormRenderer {
         const hour = this.elements.hour.value;
         const minute = this.elements.minute.value;
         const birthplace = this.elements.birthplace.value;
+        const byoyakuEnabled = this.isByoyakuEnabled();
 
         let gender = null;
         for (const radio of this.elements.genderInputs) {
@@ -50,11 +52,16 @@ export class FormRenderer {
             }
         }
 
-        // InputParser.parseManualInput に渡すためにそのまま返す
-        // 解析は Controller 側で行う
         return {
-            year, month, day, hour, minute, gender, birthplace
+            year, month, day, hour, minute, gender, birthplace, byoyakuEnabled
         };
+    }
+
+    /**
+     * 病薬オプション（セッション内・デフォルトOFF）
+     */
+    isByoyakuEnabled() {
+        return Boolean(this.elements.byoyakuOption?.checked);
     }
 
     /**
@@ -75,6 +82,10 @@ export class FormRenderer {
                     break;
                 }
             }
+        }
+
+        if (typeof values.byoyakuEnabled === "boolean" && this.elements.byoyakuOption) {
+            this.elements.byoyakuOption.checked = values.byoyakuEnabled;
         }
     }
 
@@ -117,5 +128,12 @@ export class FormRenderer {
 
     onPaste(handler) {
         this.elements.pasteBtn.addEventListener("click", handler);
+    }
+
+    onByoyakuOptionChange(handler) {
+        if (!this.elements.byoyakuOption) return;
+        this.elements.byoyakuOption.addEventListener("change", () => {
+            handler(this.isByoyakuEnabled());
+        });
     }
 }
