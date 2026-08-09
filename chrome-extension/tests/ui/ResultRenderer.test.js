@@ -122,7 +122,10 @@ function samplePayload(overrides = {}) {
                 reading: '病力2/薬力1（病重薬軽）'
             },
             kiki: {
-                ki: [{ label: '官殺', element: '金', tenGod: '正官' }],
+                ki: [
+                    { label: '官殺', element: '金', tenGod: '正官' },
+                    { label: '調候（冷ます）', element: '水' }
+                ],
                 ji: [{ label: '比劫奪財', element: '木', tenGod: '比肩' }],
                 note: '薬側を喜、病側を忌とする（役割ラベル）'
             }
@@ -168,14 +171,17 @@ test('ResultRenderer - 気象・主軸・四病四薬・喜忌を重複なく描
     assert.ok(html.includes('（潤す → 水）'), '副調候');
     assert.ok(html.includes('【主軸】正官格（官殺を守る）'), '主軸ブロック');
     assert.ok(html.includes('破: 傷官見官'), '破要約');
-    assert.ok(html.includes('【四病四薬】四病: 旺（木） ／ 四薬: 損（金）'), '四病四薬を明示');
-    assert.ok(html.includes('【病】比劫奪財'), '主病ラベル');
+    assert.ok(html.includes('【五行偏重】旺（木） → 損（金）'), '五行偏重分類を明示');
+    assert.ok(html.includes('四病四薬による命式全体の分類'), '判定層の違いを明示');
+    assert.ok(html.includes('【主軸の病】比劫奪財'), '主軸病ラベル');
+    assert.ok(html.includes('【主軸の薬】官殺'), '主軸薬ラベル');
     assert.ok(!html.includes('気象偏枯'), '上段と重複する気象診断は出さない');
     assert.ok(!html.includes('【薬・調候】'), '調候薬を診断ごとに重複表示しない');
-    assert.ok(html.includes('【バランス】病重薬軽'), 'バランス');
+    assert.ok(html.includes('【主軸病薬のバランス】病重薬軽'), 'バランス');
     assert.ok(html.includes('今は薬不足'), 'バランス読解文');
-    assert.ok(html.includes('喜: 官殺・金'), '喜');
-    assert.ok(html.includes('忌: 比劫奪財・木'), '忌');
+    assert.ok(html.includes('主軸の喜: 官殺・金'), '主軸の喜');
+    assert.ok(html.includes('調候の喜: 調候（冷ます）・水'), '調候の喜を分離');
+    assert.ok(html.includes('主軸の忌: 比劫奪財・木'), '主軸の忌');
 });
 
 test('ResultRenderer - 雕は四薬ではなく琢で表示する', () => {
@@ -223,8 +229,8 @@ test('ResultRenderer - 雕は四薬ではなく琢で表示する', () => {
     }));
 
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    assert.ok(html.includes('【四病四薬】四病: 雕 ／ 処置: 琢（木）'), '琢を四薬と分離');
-    assert.ok(!html.includes('【薬】対立導入（琢）'), '個別薬に四薬処置を混ぜない');
+    assert.ok(html.includes('【五行偏重】雕 → 処置 琢（木）'), '琢を四薬と分離');
+    assert.ok(!html.includes('【主軸の薬】対立導入（琢）'), '個別薬に四薬処置を混ぜない');
     assert.ok(!html.includes('nullの薬'), 'null薬ラベルを出さない');
     assert.ok(html.includes('目立った破なし'), '破なし文言');
 });

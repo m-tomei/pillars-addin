@@ -193,8 +193,8 @@ test('Acceptance S-02 - 複数診断・枯/生', async () => {
     const renderer = new ResultRenderer();
     renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    assert.ok(html.includes('【四病四薬】四病: 枯'), '枯を明示');
-    assert.ok(html.includes('四薬: 生'), '生を明示');
+    assert.ok(html.includes('【五行偏重】枯'), '枯を明示');
+    assert.ok(html.includes('→ 生'), '生を明示');
     assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 2, '用神損傷の2診断だけを表示');
     assert.strictEqual((html.match(/調候（温める）・火/g) || []).length, 1, '喜忌の調候薬を重複させない');
 });
@@ -296,7 +296,7 @@ test('Acceptance S-04 - 身弱十神病＋從重旺/長＋夏の調候', async (
     const renderer = new ResultRenderer();
     renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    assert.ok(html.includes('四病: 旺（火） ／ 四薬: 長（水）'), '從重の四病四薬を明示');
+    assert.ok(html.includes('【五行偏重】旺（火） → 長（水）'), '從重の四病四薬を明示');
     assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 2, '用神損傷の2診断だけを表示');
 });
 
@@ -324,7 +324,7 @@ test('Acceptance S-05 - 雕は四薬null・処置琢', async () => {
     const renderer = new ResultRenderer();
     renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    assert.ok(html.includes('四病: 雕 ／ 処置: 琢（木）'), '四薬nullと琢を分離表示');
+    assert.ok(html.includes('【五行偏重】雕 → 処置 琢（木）'), '四薬nullと琢を分離表示');
     assert.ok(!html.includes('琢の薬'), '琢を四薬名にしない');
 
     const dist = scenario.expectedWeightedDistribution;
@@ -361,7 +361,9 @@ test('Acceptance S-06 - 卯月土旺は損を維持', async () => {
         byoyakuResult
     });
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    assert.ok(html.includes('四病: 旺（土） ／ 四薬: 損（木）'), '四病層の土旺を明示');
+    assert.ok(html.includes('【五行偏重】旺（土） → 損（木）'), '四病層の土旺を明示');
+    assert.ok(html.includes('【主軸の病】身旺殺軽'), '主軸病を別ラベルで表示');
+    assert.ok(html.includes('【主軸の薬】財星生殺'), '主軸薬を別ラベルで表示');
     assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 1, '気象診断を重複表示しない');
 });
 
@@ -388,5 +390,5 @@ test('Acceptance S-07 - 卯月木旺は長', async () => {
     const renderer = new ResultRenderer();
     renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    assert.ok(html.includes('四病: 旺（木） ／ 四薬: 長（金）'), '長の成立を明示');
+    assert.ok(html.includes('【五行偏重】旺（木） → 長（金）'), '長の成立を明示');
 });

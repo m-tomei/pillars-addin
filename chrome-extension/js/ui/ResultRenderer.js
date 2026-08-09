@@ -415,23 +415,26 @@ export class ResultRenderer {
     const diseaseElement = byoyakuResult.fourDiseaseElement
       ? `（${byoyakuResult.fourDiseaseElement}）`
       : '';
-    let treatment;
+    let classification;
     if (byoyakuResult.fourMedicine) {
       const medicineElement = byoyakuResult.fourMedicineElement
         ? `（${byoyakuResult.fourMedicineElement}）`
         : '';
-      treatment = `四薬: ${byoyakuResult.fourMedicine}${medicineElement}`;
+      classification = `${disease}${diseaseElement} → ${byoyakuResult.fourMedicine}${medicineElement}`;
     } else if (byoyakuResult.treatmentMode) {
       const treatmentElements = (byoyakuResult.treatmentElements || []).join('・');
-      treatment = `処置: ${byoyakuResult.treatmentMode}${treatmentElements ? `（${treatmentElements}）` : ''}`;
+      classification = `${disease}${diseaseElement} → 処置 ${byoyakuResult.treatmentMode}${treatmentElements ? `（${treatmentElements}）` : ''}`;
     } else {
-      treatment = '四薬: —';
+      classification = `${disease}${diseaseElement} → —`;
     }
 
     return `
       <div data-block="four-disease" style="background-color: #fdf2e9; border-left: 4px solid #d35400; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
         <div style="font-weight: bold; color: #a04000;">
-          【四病四薬】四病: ${disease}${diseaseElement} ／ ${treatment}
+          【五行偏重】${classification}
+        </div>
+        <div style="font-size: 11px; color: #777; margin-top: 3px;">
+          四病四薬による命式全体の分類。下の主軸病薬とは別に判定する。
         </div>
       </div>`;
   }
@@ -443,12 +446,11 @@ export class ResultRenderer {
     const medicineBg = '#eafaf1';
     const medicineBorder = '#27ae60';
     return diagnosesToRender.map((diag, idx) => {
-      const roleTag = diag.role === 'primary'
-        ? '主'
-        : (diag.source === 'kishou' ? '副（気象）' : '副');
-      const label = diagnosesToRender.length > 1
-        ? `病${idx + 1}・${roleTag}`
-        : (diag.role === 'secondary' ? `病・${roleTag}` : '病');
+      const isKishou = diag.source === 'kishou';
+      const label = isKishou
+        ? '気象の病'
+        : (diagnosesToRender.length > 1 ? `主軸の病${idx + 1}` : '主軸の病');
+      const medicineLabel = isKishou ? '気象の薬' : '主軸の薬';
 
       const severityLabel = this._severityLabel(diag.disease?.severity);
       const diseaseMeta = severityLabel;
@@ -480,7 +482,7 @@ export class ResultRenderer {
 
             <div style="background-color: ${medicineBg}; border-left: 4px solid ${medicineBorder}; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
               <div style="font-weight: bold; color: #1e8449; margin-bottom: 4px;">
-                【薬】${medicine.name || '—'}${medicine.element ? ` → ${medicine.element}` : ''}
+                【${medicineLabel}】${medicine.name || '—'}${medicine.element ? ` → ${medicine.element}` : ''}
               </div>
               <div style="font-size: 12px; color: #555; margin-bottom: 4px;">
                 ${(diag.reason || '')
@@ -511,7 +513,7 @@ export class ResultRenderer {
     return `
       <div data-block="balance" style="background-color: #fef9e7; border-left: 4px solid #f39c12; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
         <div style="font-weight: bold; color: #9a7d0a; margin-bottom: 4px;">
-          【バランス】${label}
+          【主軸病薬のバランス】${label}
         </div>
         <div style="font-size: 12px; color: #555;">
           ${reading}
@@ -532,14 +534,19 @@ export class ResultRenderer {
       return [...new Set(labels)].join('、');
     };
 
+    const isChoukou = item => String(item?.label || '').startsWith('調候');
+    const primaryKi = (kiki.ki || []).filter(item => !isChoukou(item));
+    const choukouKi = (kiki.ki || []).filter(isChoukou);
+
     return `
       <div data-block="kiki" style="background-color: #f8f9f9; border-left: 4px solid #566573; padding: 8px 12px; margin-bottom: 4px; border-radius: 0 4px 4px 0;">
         <div style="font-weight: bold; color: #2c3e50; margin-bottom: 4px;">【喜忌】</div>
         <div style="font-size: 12px; color: #555;">
-          喜: ${formatItems(kiki.ki)}
+          主軸の喜: ${formatItems(primaryKi)}
         </div>
+        ${choukouKi.length ? `<div style="font-size: 12px; color: #555; margin-top: 2px;">調候の喜: ${formatItems(choukouKi)}</div>` : ''}
         <div style="font-size: 12px; color: #555; margin-top: 2px;">
-          忌: ${formatItems(kiki.ji)}
+          主軸の忌: ${formatItems(kiki.ji)}
         </div>
       </div>`;
   }
