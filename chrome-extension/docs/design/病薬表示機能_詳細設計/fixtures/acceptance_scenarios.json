@@ -1,0 +1,155 @@
+{
+  "version": "1.0",
+  "timezone": "Asia/Tokyo",
+  "engine": "pillars-addin chrome-extension FortuneCalculator/ByoyakuCalculator",
+  "fixedAt": "2026-08-09",
+  "scenarios": [
+    {
+      "id": "S-01",
+      "title": "命式のみ（病薬OFF）",
+      "byoyakuEnabled": false,
+      "input": { "year": 1990, "month": 1, "day": 15, "hour": 10, "minute": 0, "gender": "男性" },
+      "nearestMonthTerm": { "name": "小寒", "datetime": "1990-01-05T05:00:00+09:00", "daysApart": 10.3 },
+      "expectedPillars": {
+        "year": { "stem": "己", "branch": "巳" },
+        "month": { "stem": "丁", "branch": "丑" },
+        "day": { "stem": "庚", "branch": "辰" },
+        "hour": { "stem": "辛", "branch": "巳" }
+      },
+      "expectedUi": { "showByoyaku": false, "showGouChuu": false },
+      "expectedCalculatorsCalled": ["Fortune", "Juuniun", "Tsuuhen", "GreatFortune"],
+      "expectedCalculatorsNotCalled": ["GouChuu", "Strength", "Kakkyoku", "Byoyaku", "DaiunHyouka"]
+    },
+    {
+      "id": "S-02",
+      "title": "比劫奪財・複数診断（枯/生）",
+      "byoyakuEnabled": true,
+      "r01Link": "R01-B",
+      "input": { "year": 1970, "month": 1, "day": 18, "hour": 10, "minute": 0, "gender": "男性" },
+      "nearestMonthTerm": { "name": "小寒", "datetime": "1970-01-06T05:00:00+09:00", "daysApart": 12.3 },
+      "expectedPillars": {
+        "year": { "stem": "己", "branch": "酉" },
+        "month": { "stem": "丁", "branch": "丑" },
+        "day": { "stem": "戊", "branch": "戌" },
+        "hour": { "stem": "丁", "branch": "巳" }
+      },
+      "expectedCurrent": {
+        "strength": "strong",
+        "kakkyoku": "正財格",
+        "isEstablished": false,
+        "fourDisease": "枯",
+        "fourMedicine": "生",
+        "diagnoses": [
+          { "disease": "比劫奪財", "medicine": "官殺", "medicineExists": false },
+          { "disease": "印多洩財気", "medicine": "財星" }
+        ]
+      },
+      "expectedAfterR01": { "fourMedicine": "生" }
+    },
+    {
+      "id": "S-03",
+      "title": "冬月・気象（丑月）",
+      "byoyakuEnabled": true,
+      "input": { "year": 1990, "month": 1, "day": 15, "hour": 10, "minute": 0, "gender": "男性" },
+      "nearestMonthTerm": { "name": "小寒", "datetime": "1990-01-05T05:00:00+09:00", "daysApart": 10.3 },
+      "expectedPillars": {
+        "year": { "stem": "己", "branch": "巳" },
+        "month": { "stem": "丁", "branch": "丑" },
+        "day": { "stem": "庚", "branch": "辰" },
+        "hour": { "stem": "辛", "branch": "巳" }
+      },
+      "expectedCurrent": {
+        "kakkyoku": "正官格",
+        "fourDisease": "旺",
+        "fourMedicine": "損",
+        "disease": "比劫奪官",
+        "medicine": "財星",
+        "medicineExists": true,
+        "medicineLocation": "日支蔵干"
+      },
+      "expectedAfterKishou": {
+        "temperature": "寒",
+        "choukouDirection": "温める",
+        "primaryElementsIncludes": ["火"]
+      }
+    },
+    {
+      "id": "S-04",
+      "title": "夏月・複数診断（午月・弱/益）",
+      "byoyakuEnabled": true,
+      "input": { "year": 1987, "month": 6, "day": 12, "hour": 10, "minute": 0, "gender": "男性" },
+      "nearestMonthTerm": { "name": "芒種", "datetime": "1987-06-07T03:00:00+09:00", "daysApart": 5.4 },
+      "expectedPillars": {
+        "year": { "stem": "丁", "branch": "卯" },
+        "month": { "stem": "丙", "branch": "午" },
+        "day": { "stem": "壬", "branch": "辰" },
+        "hour": { "stem": "乙", "branch": "巳" }
+      },
+      "expectedCurrent": {
+        "strength": "weak",
+        "kakkyoku": "正財格",
+        "isEstablished": true,
+        "fourDisease": "弱",
+        "fourMedicine": "益",
+        "diagnoses": [
+          { "disease": "財多身弱", "medicine": "印星" },
+          { "disease": "財生殺旺", "medicine": "印星" }
+        ]
+      },
+      "expectedAfterKishou": {
+        "temperature": "熱",
+        "choukouDirection": "冷ます",
+        "primaryElementsIncludes": ["水"]
+      }
+    },
+    {
+      "id": "S-05",
+      "title": "雕 → 実装後は琢",
+      "byoyakuEnabled": true,
+      "r01Link": "R01-A",
+      "input": { "year": 1998, "month": 5, "day": 22, "hour": 10, "minute": 0, "gender": "女性" },
+      "nearestMonthTerm": { "name": "立夏", "datetime": "1998-05-07T09:00:00+09:00", "daysApart": 15.1 },
+      "expectedPillars": {
+        "year": { "stem": "戊", "branch": "寅" },
+        "month": { "stem": "丁", "branch": "巳" },
+        "day": { "stem": "己", "branch": "巳" },
+        "hour": { "stem": "己", "branch": "巳" }
+      },
+      "expectedCurrent": {
+        "strength": "strong",
+        "kakkyoku": "偏印格",
+        "fourDisease": "雕",
+        "fourMedicine": "損",
+        "disease": "偏印助劫",
+        "medicine": "官殺"
+      },
+      "expectedAfterR01": { "fourMedicine": "琢" }
+    },
+    {
+      "id": "S-06",
+      "title": "卯月旺 → 実装後は長候補",
+      "byoyakuEnabled": true,
+      "r01Link": "R01-C",
+      "input": { "year": 1970, "month": 3, "day": 15, "hour": 10, "minute": 0, "gender": "男性" },
+      "nearestMonthTerm": { "name": "啓蟄", "datetime": "1970-03-06T06:00:00+09:00", "daysApart": 9.3 },
+      "expectedPillars": {
+        "year": { "stem": "庚", "branch": "戌" },
+        "month": { "stem": "己", "branch": "卯" },
+        "day": { "stem": "甲", "branch": "午" },
+        "hour": { "stem": "己", "branch": "巳" }
+      },
+      "expectedCurrent": {
+        "strength": "strong",
+        "kakkyoku": "偏官格",
+        "fourDisease": "旺",
+        "fourMedicine": "損",
+        "disease": "身旺殺軽",
+        "medicine": "財星生殺"
+      },
+      "expectedAfterR01": {
+        "fourMedicine": "長",
+        "note": "病五行が木で卯月長養のときに長。條件非該当なら損のまま"
+      }
+    }
+  ]
+}

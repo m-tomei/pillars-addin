@@ -12,7 +12,7 @@ ByoyakuResult {
   medicine: MedicineView
   summary: string
   fourDisease: '雕'|'枯'|'旺'|'弱'
-  fourMedicine: '損'|'益'|'生'|'長'
+  fourMedicine: '損'|'益'|'生'|'長'|'琢'   // 琢=雕に対する対立導入
 
   // --- 複数診断 ---
   diagnoses: DiagnosisItem[]
