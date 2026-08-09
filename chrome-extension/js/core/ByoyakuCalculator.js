@@ -270,6 +270,21 @@ export class ByoyakuCalculator {
       diag, kishouResult, fortuneResult, transformedMap
     ));
 
+    // ── 五行偏重 × 主軸薬の突合（T-03f）──
+    diagnoses = diagnoses.map(diag => this._reconcileWithHeaviness(
+      diag,
+      {
+        fourDiseaseResult,
+        fourMedicineResult,
+        heaviestElement,
+        keizenResult,
+        dayElement,
+        kishouResult,
+        fortuneResult,
+        transformedMap
+      }
+    ));
+
     // 気象が extreme かつ用神損傷が無いとき、気象診断を先頭へ
     if (kishouResult?.isExtreme && (keizenResult.breaks || []).length === 0) {
       diagnoses = [
@@ -287,7 +302,10 @@ export class ByoyakuCalculator {
       diagnoses, fortuneResult, dayElement, fourDiseaseResult, keizenResult,
       kishouResult, transformedMap
     );
-    const kiki = this._buildKiki(diagnoses);
+    const kiki = this._buildKiki(diagnoses, {
+      heaviestElement,
+      fourDisease: fourDiseaseResult.type
+    });
 
     // 代表診断: 用神損傷の primary を優先（表示先頭と分離）
     const representative = diagnoses.find(d => d.source === 'keizen' && d.role === 'primary')
@@ -1116,6 +1134,172 @@ export class ByoyakuCalculator {
   }
 
   /**
+   * 五行偏重と主軸薬の突合（T-03f）
+   *
+   * 主軸薬の五行が從重の病五行と同気のとき、無条件に喜へ入れない。
+   * 優先: 主軸用神 → 四薬五行 → 調候候補（いずれも病五行・從重と不一致）。
+   * @private
+   */
+  _reconcileWithHeaviness(diag, ctx) {
+    if (!diag || diag.source === 'kishou') return diag;
+
+    const {
+      fourDiseaseResult,
+      fourMedicineResult,
+      heaviestElement,
+      keizenResult,
+      dayElement,
+      kishouResult,
+      fortuneResult,
+      transformedMap
+    } = ctx;
+
+    const heavyEl = fourDiseaseResult?.diseaseElement || heaviestElement || null;
+    const medEl = diag.medicine?.element || null;
+    const diseaseEl = diag.disease?.element || null;
+    const fourType = fourDiseaseResult?.type;
+
+    // 旺（有余）の從重病と同気の薬だけを衝突とみなす。
+    // 枯（不足）では同気の薬は滋養（生）になり得るため除外しない。
+    if (!heavyEl || !medEl || medEl !== heavyEl) return diag;
+    if (fourType !== '旺') return diag;
+
+    const pillar = keizenResult?.pillar || {};
+    const youshinEl = pillar.youshinElement
+      || this._getCategoryElement(pillar.youshinCategory, dayElement);
+    const youshinLabel = pillar.youshinLabel
+      || this._youshinCategoryLabel(pillar.youshinCategory);
+    const fourMedEl = fourMedicineResult?.element || null;
+    const choukouEls = kishouResult?.choukou?.primaryElements || [];
+
+    const candidates = [];
+    if (youshinEl && youshinEl !== heavyEl && youshinEl !== diseaseEl) {
+      candidates.push({
+        name: youshinLabel || '主軸用神',
+        element: youshinEl,
+        tenGod: this._inferMedicineTenGod(youshinLabel || '', dayElement)
+          || this._tenGodForYoushinCategory(pillar.youshinCategory),
+        priority: 1,
+        reason: `五行偏重（${heavyEl}）と同気のため主軸（${youshinLabel || youshinEl}）を優先`
+      });
+    }
+    if (fourMedEl && fourMedEl !== heavyEl && fourMedEl !== diseaseEl) {
+      candidates.push({
+        name: fourMedicineResult?.type
+          ? `${fourMedicineResult.type}の薬`
+          : '四薬',
+        element: fourMedEl,
+        tenGod: null,
+        priority: 2,
+        reason: `五行偏重（${heavyEl}）と同気のため四薬（${fourMedEl}）を優先`
+      });
+    }
+    for (const el of choukouEls) {
+      if (!el || el === heavyEl || el === diseaseEl) continue;
+      if (candidates.some(c => c.element === el)) continue;
+      candidates.push({
+        name: `調候（${kishouResult?.choukou?.direction || '調候'}）`,
+        element: el,
+        tenGod: null,
+        priority: 3,
+        reason: `五行偏重（${heavyEl}）と同気のため調候（${el}）を優先`
+      });
+    }
+
+    candidates.sort((a, b) => a.priority - b.priority);
+    const chosen = candidates[0];
+    const caution = {
+      ...diag.medicine,
+      reason: `五行偏重（${heavyEl}）と同気のため喜から除外`
+    };
+
+    if (!chosen) {
+      return {
+        ...diag,
+        medicineCaution: caution,
+        medicine: {
+          name: '要再検討',
+          element: null,
+          tenGod: null,
+          exists: false,
+          location: null,
+          choukouAligned: false
+        },
+        reason: `${diag.reason || ''}（五行偏重と同気の薬を除外）`,
+        heavinessConflict: {
+          heavyElement: heavyEl,
+          demotedMedicine: diag.medicine?.name || null,
+          chosenMedicine: null,
+          reason: caution.reason
+        }
+      };
+    }
+
+    const location = this._findMedicineInChart(
+      chosen.element, fortuneResult, transformedMap
+    );
+    const choukouAligned = choukouEls.includes(chosen.element);
+    let medicineSecondary = diag.medicineSecondary || null;
+    if (medicineSecondary?.elements?.length) {
+      const remaining = medicineSecondary.elements.filter(el => el !== chosen.element);
+      if (remaining.length === 0) {
+        medicineSecondary = null;
+      } else {
+        medicineSecondary = {
+          ...medicineSecondary,
+          element: remaining[0],
+          elements: remaining
+        };
+      }
+    }
+
+    return {
+      ...diag,
+      medicineCaution: caution,
+      medicine: {
+        name: chosen.name,
+        element: chosen.element,
+        tenGod: chosen.tenGod,
+        exists: location.exists,
+        location: location.location,
+        choukouAligned
+      },
+      medicineSecondary,
+      reason: `${diag.reason || ''}（${chosen.reason}）`,
+      heavinessConflict: {
+        heavyElement: heavyEl,
+        demotedMedicine: diag.medicine?.name || null,
+        chosenMedicine: chosen.name,
+        reason: chosen.reason
+      }
+    };
+  }
+
+  /** @private */
+  _youshinCategoryLabel(category) {
+    const map = {
+      officer: '官殺',
+      wealth: '財星',
+      seal: '印星',
+      output: '食傷',
+      self: '比劫'
+    };
+    return map[category] || null;
+  }
+
+  /** @private */
+  _tenGodForYoushinCategory(category) {
+    const map = {
+      officer: '偏官',
+      wealth: '正財',
+      seal: '正印',
+      output: '食神',
+      self: '比肩'
+    };
+    return map[category] || null;
+  }
+
+  /**
    * 十神薬と調候の突合（T-03d）
    * @private
    */
@@ -1278,29 +1462,44 @@ export class ByoyakuCalculator {
 
   /**
    * 喜忌ラベル
+   * medicineCaution（從重と同気で降格した薬）は喜に入れない。
    * @private
    */
-  _buildKiki(diagnoses) {
+  _buildKiki(diagnoses, ctx = {}) {
     const ki = [];
     const ji = [];
     const seenKi = new Set();
     const seenJi = new Set();
+    const blockedElements = new Set();
 
     for (const diag of diagnoses) {
-      if (diag.medicine?.element || diag.medicine?.tenGod) {
-        const key = `${diag.medicine.tenGod || ''}:${diag.medicine.element || ''}`;
-        if (!seenKi.has(key)) {
-          seenKi.add(key);
-          ki.push({
-            label: diag.medicine.name,
-            element: diag.medicine.element || undefined,
-            tenGod: diag.medicine.tenGod || undefined
-          });
+      if (diag.medicineCaution?.element) {
+        blockedElements.add(diag.medicineCaution.element);
+      }
+    }
+
+    for (const diag of diagnoses) {
+      const med = diag.medicine;
+      if (med && (med.element || med.tenGod) && med.element !== null) {
+        if (med.element && blockedElements.has(med.element)) {
+          // 降格薬と同気は喜に載せない
+        } else {
+          const key = `${med.name || med.tenGod || ''}:${med.element || ''}`;
+          if (!seenKi.has(key)) {
+            seenKi.add(key);
+            ki.push({
+              label: med.name,
+              element: med.element || undefined,
+              tenGod: med.tenGod || undefined
+            });
+          }
         }
       }
       if (diag.medicineSecondary?.elements) {
         for (const el of diag.medicineSecondary.elements) {
-          const key = `choukou:${el}`;
+          if (blockedElements.has(el)) continue;
+          if (med?.element && el === med.element) continue;
+          const key = `${diag.medicineSecondary.name || '調候'}:${el}`;
           if (!seenKi.has(key)) {
             seenKi.add(key);
             ki.push({ label: diag.medicineSecondary.name, element: el });
@@ -1320,10 +1519,27 @@ export class ByoyakuCalculator {
       }
     }
 
+    // 旺の從重病五行は忌側の文脈として併記（喜との衝突防止の根拠）
+    if (
+      ctx.fourDisease === '旺'
+      && ctx.heaviestElement
+      && !seenJi.has(`從重:${ctx.heaviestElement}`)
+    ) {
+      ji.push({
+        label: `五行偏重（${ctx.fourDisease}）`,
+        element: ctx.heaviestElement
+      });
+    }
+
+    const noteParts = ['薬側を喜、病側を忌とする（役割ラベル）'];
+    if (blockedElements.size > 0) {
+      noteParts.push(`從重と同気の薬（${[...blockedElements].join('・')}）は喜から除外`);
+    }
+
     return {
       ki,
       ji,
-      note: '薬側を喜、病側を忌とする（役割ラベル）'
+      note: noteParts.join('。')
     };
   }
 }

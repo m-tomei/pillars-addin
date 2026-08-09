@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "四柱推命 命式計算",
-  "version": "1.7.0",
-  "description": "四柱推命の命式・大運・格局・病薬・吉凶判定を計算するChrome拡張機能",
+  "version": "2.0.0",
+  "description": "四柱推命の命式・大運を計算。任意で気象・主軸・病薬・喜忌診断と大運吉凶を追加表示するChrome拡張機能",
   "permissions": [
     "sidePanel",
     "clipboardRead"

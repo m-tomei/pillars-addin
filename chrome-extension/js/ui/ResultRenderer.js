@@ -42,7 +42,7 @@ export class ResultRenderer {
     this.renderFortuneTable(fortune, juuniunResults, tsuuhenResults);
 
     if (kakkyokuResult && byoyakuResult && strengthResult) {
-      this.renderKakkyokuByoyaku(kakkyokuResult, byoyakuResult, strengthResult);
+      this.renderByoyakuSection({ kakkyokuResult, byoyakuResult, strengthResult });
       if (this.elements.kakkyokuByoyakuSection) {
         this.elements.kakkyokuByoyakuSection.style.display = "block";
       }
@@ -239,10 +239,150 @@ export class ResultRenderer {
   }
 
   /**
-   * 格局・病薬診断のレンダリング
+   * 旧API互換。v2は renderByoyakuSection を正とする。
    */
   renderKakkyokuByoyaku(kakkyokuResult, byoyakuResult, strengthResult) {
+    this.renderByoyakuSection({ kakkyokuResult, byoyakuResult, strengthResult });
+  }
+
+  /**
+   * 病薬診断セクション（気象→主軸→身旺弱→病薬→バランス→喜忌）
+   * BYO-DD-07 / T-04
+   */
+  renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult }) {
     if (!this.elements.kakkyokuByoyakuResult) return;
+
+    if (!byoyakuResult) {
+      this.elements.kakkyokuByoyakuResult.innerHTML = `
+        <div style="margin-top: 12px; color: #c0392b;">病薬を特定できませんでした</div>`;
+      return;
+    }
+
+    const allDiagnoses = byoyakuResult.diagnoses?.length
+      ? byoyakuResult.diagnoses
+      : (byoyakuResult.disease ? [{
+          role: 'primary',
+          source: 'fallback',
+          disease: byoyakuResult.disease,
+          medicine: byoyakuResult.medicine,
+          reason: byoyakuResult.summary,
+          fourDisease: byoyakuResult.fourDisease,
+          fourMedicine: byoyakuResult.fourMedicine,
+          treatmentMode: byoyakuResult.treatmentMode
+        }] : []);
+    // 気象は上段の気象ブロックで表示済み。用神損傷診断がある場合は重複掲載しない。
+    const doctrinalDiagnoses = allDiagnoses.filter(diag => diag.source !== 'kishou');
+    const diagnosesToRender = doctrinalDiagnoses.length ? doctrinalDiagnoses : allDiagnoses;
+
+    const html = `
+      <div class="byoyaku-panel" style="margin-top: 12px; border: 2px solid #8e44ad; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #8e44ad; color: white; padding: 8px 12px; font-weight: bold; text-align: center;">
+          病薬診断
+        </div>
+        <div class="byoyaku-panel-body" style="padding: 12px;">
+          ${this._renderKishouBlock(byoyakuResult.kishou)}
+          ${this._renderKeizenBlock(byoyakuResult.keizen, kakkyokuResult)}
+          ${this._renderStrengthBlock(strengthResult)}
+          ${this._renderFourDiseaseBlock(byoyakuResult)}
+          ${diagnosesToRender.length
+            ? this._renderDiagnosisBlocks(diagnosesToRender)
+            : '<div style="color: #c0392b; margin-bottom: 10px;">病薬を特定できませんでした</div>'}
+          ${this._renderBalanceBlock(byoyakuResult.balance)}
+          ${this._renderKikiBlock(byoyakuResult.kiki)}
+        </div>
+      </div>
+    `;
+
+    this.elements.kakkyokuByoyakuResult.innerHTML = html;
+  }
+
+  /**
+   * 命式本体の表示を維持したまま、病薬診断の失敗を表示する。
+   */
+  showByoyakuError() {
+    if (!this.elements.kakkyokuByoyakuResult) return;
+
+    this.elements.kakkyokuByoyakuResult.innerHTML = `
+      <div style="margin-top: 12px; color: #c0392b;">
+        病薬診断の計算に失敗しました。命式と大運はそのまま参照できます。
+      </div>`;
+    if (this.elements.kakkyokuByoyakuSection) {
+      this.elements.kakkyokuByoyakuSection.style.display = "block";
+    }
+  }
+
+  /** @private */
+  _severityLabel(severity) {
+    if (severity === 'severe') return '重度';
+    if (severity === 'moderate') return '中度';
+    return '軽度';
+  }
+
+  /** @private */
+  _renderKishouBlock(kishou) {
+    if (!kishou) {
+      return `
+        <div data-block="kishou" style="background-color: #eaf2f8; border-left: 4px solid #2980b9; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+          <div style="font-weight: bold; color: #1a5276;">【気象】判定簡易（中和扱い）</div>
+        </div>`;
+    }
+
+    const severityLabel = this._severityLabel(kishou.severity);
+    const choukou = kishou.choukou || {};
+    const direction = choukou.direction || 'なし';
+    const primary = (choukou.primaryElements || []).join('・') || '—';
+    const secondaryItems = choukou.secondary || [];
+    const secondary = secondaryItems.length
+      ? `（${secondaryItems.map(item => {
+          const elements = (item.elements || []).join('・') || '—';
+          return `${item.direction || '副調候'} → ${elements}`;
+        }).join(' ／ ')}）`
+      : '';
+
+    return `
+      <div data-block="kishou" style="background-color: #eaf2f8; border-left: 4px solid #2980b9; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+        <div style="font-weight: bold; color: #1a5276; margin-bottom: 4px;">
+          【気象】${kishou.temperature}・${kishou.humidity}（偏り: ${severityLabel}）
+        </div>
+        <div style="font-size: 12px; color: #555; margin-bottom: 2px;">
+          調候: ${direction} → ${primary}${secondary}
+        </div>
+        <div style="font-size: 11px; color: #555;">
+          ${kishou.summary || ''}
+        </div>
+      </div>`;
+  }
+
+  /** @private */
+  _renderKeizenBlock(keizen, kakkyokuResult) {
+    const pillar = keizen?.pillar || {};
+    const kakkyoku = pillar.kakkyoku || kakkyokuResult?.kakkyoku || '—';
+    const youshinLabel = pillar.youshinLabel
+      || kakkyokuResult?.categoryLabel
+      || '';
+    const established = pillar.isEstablished ?? kakkyokuResult?.isEstablished;
+    const breakReason = kakkyokuResult?.breakReason || '';
+    const breaks = keizen?.breaks || [];
+    const statusHTML = established
+      ? `<span style="color: ${breaks.length ? '#e67e22' : '#27ae60'};">成格${breaks.length ? '・損傷あり' : ''}</span>`
+      : `<span style="color: #e74c3c;">破格${breakReason ? `（${breakReason}）` : ''}</span>`;
+    const breakText = breaks.length
+      ? breaks.map(b => b.name || b.condition).filter(Boolean).join('、')
+      : 'なし';
+    return `
+      <div data-block="keizen" style="background-color: #f4ecf7; border-left: 4px solid #8e44ad; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+        <div style="font-weight: bold; color: #6c3483; margin-bottom: 4px;">
+          【主軸】${kakkyoku}${youshinLabel ? `（${youshinLabel}）` : ''}　${statusHTML}
+        </div>
+        <div style="font-size: 12px; color: #555; margin-bottom: 2px;">
+          用神損傷: ${breakText}
+        </div>
+      </div>`;
+  }
+
+  /** @private */
+  _renderStrengthBlock(strengthResult) {
+    if (!strengthResult) return '';
 
     const strengthColor = strengthResult.strength === 'strong' ? '#1a5276'
       : strengthResult.strength === 'weak' ? '#b7410e'
@@ -250,97 +390,183 @@ export class ResultRenderer {
     const strengthBg = strengthResult.strength === 'strong' ? '#d4e6f1'
       : strengthResult.strength === 'weak' ? '#fdebd0'
       : '#d5f5e3';
+    const details = strengthResult.details || {};
+    const gouChuuPart = details.gouChuuScore != null && details.gouChuuScore !== 0
+      ? ` ／ 合冲: ${details.gouChuuScore >= 0 ? '+' : ''}${details.gouChuuScore}`
+      : '';
 
-    const kakkyokuStatusHTML = kakkyokuResult.isEstablished
-      ? '<span style="color: #27ae60;">成格</span>'
-      : `<span style="color: #e74c3c;">破格（${kakkyokuResult.breakReason}）</span>`;
+    return `
+      <div data-block="strength" style="background-color: ${strengthBg}; border-left: 4px solid ${strengthColor}; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+        <div style="font-weight: bold; color: ${strengthColor}; margin-bottom: 4px;">
+          【身旺弱】${strengthResult.strengthLabel || strengthResult.strength}（スコア: ${strengthResult.score}）
+        </div>
+        <div style="font-size: 11px; color: #555;">
+          月令: ${details.monthLordScore >= 0 ? '+' : ''}${details.monthLordScore ?? '—'} ／
+          地支根: +${details.rootScore ?? '—'} ／
+          天干助力: +${details.heavenlyStemScore ?? '—'} ／
+          十二運: +${details.juuniunBonus ?? '—'}${gouChuuPart}
+        </div>
+      </div>`;
+  }
 
-    // 病薬ブロックを生成（diagnoses配列があれば複数、なければ後方互換で単一）
-    const diagnosesToRender = byoyakuResult.diagnoses || [{
-      disease: byoyakuResult.disease,
-      medicine: byoyakuResult.medicine,
-      reason: byoyakuResult.summary
-    }];
+  /** @private */
+  _renderFourDiseaseBlock(byoyakuResult) {
+    const disease = byoyakuResult.fourDisease || '—';
+    const diseaseElement = byoyakuResult.fourDiseaseElement
+      ? `（${byoyakuResult.fourDiseaseElement}）`
+      : '';
+    let classification;
+    if (byoyakuResult.fourMedicine) {
+      const medicineElement = byoyakuResult.fourMedicineElement
+        ? `（${byoyakuResult.fourMedicineElement}）`
+        : '';
+      classification = `${disease}${diseaseElement} → ${byoyakuResult.fourMedicine}${medicineElement}`;
+    } else if (byoyakuResult.treatmentMode) {
+      const treatmentElements = (byoyakuResult.treatmentElements || []).join('・');
+      classification = `${disease}${diseaseElement} → 処置 ${byoyakuResult.treatmentMode}${treatmentElements ? `（${treatmentElements}）` : ''}`;
+    } else {
+      classification = `${disease}${diseaseElement} → —`;
+    }
 
+    return `
+      <div data-block="four-disease" style="background-color: #fdf2e9; border-left: 4px solid #d35400; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+        <div style="font-weight: bold; color: #a04000;">
+          【五行偏重】${classification}
+        </div>
+        <div style="font-size: 11px; color: #777; margin-top: 3px;">
+          四病四薬による命式全体の分類。下の主軸病薬とは別に判定する。
+        </div>
+      </div>`;
+  }
+
+  /** @private */
+  _renderDiagnosisBlocks(diagnosesToRender) {
     const diseaseBg = '#fdedec';
     const diseaseBorder = '#e74c3c';
     const medicineBg = '#eafaf1';
     const medicineBorder = '#27ae60';
+    return diagnosesToRender.map((diag, idx) => {
+      const isKishou = diag.source === 'kishou';
+      const label = isKishou
+        ? '気象の病'
+        : (diagnosesToRender.length > 1 ? `主軸の病${idx + 1}` : '主軸の病');
+      const medicineLabel = isKishou ? '気象の薬' : '主軸の薬';
 
-    const diagnosisBlocksHTML = diagnosesToRender.map((diag, idx) => {
-      const label = diagnosesToRender.length > 1 ? `病${idx + 1}` : '病';
+      const severityLabel = this._severityLabel(diag.disease?.severity);
+      const diseaseMeta = severityLabel;
 
-      const severityLabel = diag.disease.severity === 'severe' ? '重度'
-        : diag.disease.severity === 'moderate' ? '中度'
-        : '軽度';
+      const causeEls = (diag.disease?.causeElements || []).join('・');
+      const elementLineParts = [];
+      if (diag.disease?.element) elementLineParts.push(`五行: ${diag.disease.element}`);
+      else if (causeEls) elementLineParts.push(`原因: ${causeEls}`);
+      if (diag.disease?.tenGod) elementLineParts.push(`十神: ${diag.disease.tenGod}`);
 
-      const medicineExistsHTML = diag.medicine.exists
-        ? `<span style="color: #27ae60; font-weight: bold;">&#10003; 命式中に薬あり（${diag.medicine.location}）</span>`
+      const medicine = diag.medicine || {};
+      const medicineExistsHTML = medicine.exists
+        ? `<span style="color: #27ae60; font-weight: bold;">&#10003; 命式中に薬あり（${medicine.location}）</span>`
         : `<span style="color: #e67e22;">&#10007; 命式中に薬なし（行運で補う）</span>`;
 
-      return `
-          <!-- ${label} -->
-          <div style="background-color: ${diseaseBg}; border-left: 4px solid ${diseaseBorder}; padding: 8px 12px; margin-bottom: 4px; border-radius: 0 4px 4px 0;">
-            <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px;">
-              【${label}】${diag.disease.name}（${byoyakuResult.fourDisease}の病・${severityLabel}）
-            </div>
-            <div style="font-size: 12px; color: #555;">
-              ${diag.disease.element ? `五行: ${diag.disease.element}` : ''}
-              ${diag.disease.tenGod ? `／ 十神: ${diag.disease.tenGod}` : ''}
-            </div>
-          </div>
+      let choukouNote = '';
+      if (medicine.choukouAligned) {
+        choukouNote = '<div style="font-size: 11px; color: #2980b9; margin-top: 2px;">（調候一致）</div>';
+      }
 
-          <!-- 薬 -->
-          <div style="background-color: ${medicineBg}; border-left: 4px solid ${medicineBorder}; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
-            <div style="font-weight: bold; color: #1e8449; margin-bottom: 4px;">
-              【薬】${diag.medicine.name}（${byoyakuResult.fourMedicine}の薬）${diag.medicine.element ? `→ ${diag.medicine.element}` : ''}
+      const caution = diag.medicineCaution;
+      const cautionHTML = caution ? `
+            <div data-block="medicine-caution" style="background-color: #fef5e7; border-left: 4px solid #d68910; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+              <div style="font-weight: bold; color: #9a7d0a; margin-bottom: 2px;">
+                【注意】${caution.name || '—'}${caution.element ? ` → ${caution.element}` : ''}
+              </div>
+              <div style="font-size: 11px; color: #555;">
+                ${caution.reason || '五行偏重と同気のため喜から除外'}
+              </div>
+            </div>` : '';
+
+      return `
+          <div data-block="diagnosis" data-role="${diag.role || ''}" data-source="${diag.source || ''}">
+            <div style="background-color: ${diseaseBg}; border-left: 4px solid ${diseaseBorder}; padding: 8px 12px; margin-bottom: 4px; border-radius: 0 4px 4px 0;">
+              <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px;">
+                【${label}】${diag.disease?.name || '—'}${diseaseMeta ? `（${diseaseMeta}）` : ''}
+              </div>
+              ${elementLineParts.length ? `<div style="font-size: 12px; color: #555;">${elementLineParts.join(' ／ ')}</div>` : ''}
             </div>
-            <div style="font-size: 12px; color: #555; margin-bottom: 4px;">
-              ${diag.reason}
+
+            <div style="background-color: ${medicineBg}; border-left: 4px solid ${medicineBorder}; padding: 8px 12px; margin-bottom: ${caution ? '4px' : '10px'}; border-radius: 0 4px 4px 0;">
+              <div style="font-weight: bold; color: #1e8449; margin-bottom: 4px;">
+                【${medicineLabel}】${medicine.name || '—'}${medicine.element ? ` → ${medicine.element}` : ''}
+              </div>
+              <div style="font-size: 12px; color: #555; margin-bottom: 4px;">
+                ${(diag.reason || '')
+                  .replace(/（主軸の薬と調候を併記）/g, '')
+                  .replace(/（格局薬と調候が一致）/g, '')
+                  .replace(/（五行偏重（.）と同気のため主軸（[^）]+）を優先）/g, '')
+                  .replace(/（五行偏重と同気の薬を除外）/g, '')
+                  .trim()}
+              </div>
+              <div style="font-size: 11px;">
+                ${medicineExistsHTML}
+              </div>
+              ${choukouNote}
             </div>
-            <div style="font-size: 11px;">
-              ${medicineExistsHTML}
-            </div>
+            ${cautionHTML}
           </div>`;
     }).join('');
+  }
 
-    const html = `
-      <div style="margin-top: 20px; border: 2px solid #8e44ad; border-radius: 8px; overflow: hidden;">
-        <div style="background-color: #8e44ad; color: white; padding: 8px 12px; font-weight: bold; text-align: center;">
-          格局・病薬 診断
+  /** @private */
+  _renderBalanceBlock(balance) {
+    const readings = {
+      '病重薬重': '病も薬も重い。行運で中和を取りやすい型',
+      '病重薬軽': '今は薬不足。薬旺の運を待つ',
+      '病軽薬重': '薬が勝ちすぎて別偏りに注意',
+      '病軽薬軽': '小さな不均衡',
+      '病なし薬なし': '平常に近く、大きな起伏が出にくい'
+    };
+    const label = balance?.label || '病なし薬なし';
+    const reading = readings[label] || balance?.reading || '';
+    const scores = balance?.diseaseScore != null && balance?.medicineScore != null
+      ? `（病力${balance.diseaseScore} / 薬力${balance.medicineScore}）`
+      : '';
+
+    return `
+      <div data-block="balance" style="background-color: #fef9e7; border-left: 4px solid #f39c12; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+        <div style="font-weight: bold; color: #9a7d0a; margin-bottom: 4px;">
+          【主軸病薬の総合評価】${label}${scores}
         </div>
-        <div style="padding: 12px;">
-
-          <!-- 身旺弱 -->
-          <div style="background-color: ${strengthBg}; border-left: 4px solid ${strengthColor}; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
-            <div style="font-weight: bold; color: ${strengthColor}; margin-bottom: 4px;">
-              【身旺弱】${strengthResult.strengthLabel}（スコア: ${strengthResult.score}）
-            </div>
-            <div style="font-size: 11px; color: #555;">
-              月令: ${strengthResult.details.monthLordScore >= 0 ? '+' : ''}${strengthResult.details.monthLordScore} ／
-              地支根: +${strengthResult.details.rootScore} ／
-              天干助力: +${strengthResult.details.heavenlyStemScore} ／
-              十二運: +${strengthResult.details.juuniunBonus}${strengthResult.details.gouChuuScore != null && strengthResult.details.gouChuuScore !== 0 ? ` ／ 合冲: ${strengthResult.details.gouChuuScore >= 0 ? '+' : ''}${strengthResult.details.gouChuuScore}` : ''}
-            </div>
-          </div>
-
-          <!-- 格局 -->
-          <div style="background-color: #f4ecf7; border-left: 4px solid #8e44ad; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
-            <div style="font-weight: bold; color: #6c3483; margin-bottom: 4px;">
-              【格局】${kakkyokuResult.kakkyoku}（${kakkyokuResult.categoryLabel}）　${kakkyokuStatusHTML}
-            </div>
-            <div style="font-size: 11px; color: #555;">
-              根拠: ${kakkyokuResult.basisDetail}
-            </div>
-          </div>
-
-          ${diagnosisBlocksHTML}
-
+        <div style="font-size: 12px; color: #555;">
+          ${reading}
         </div>
-      </div>
-    `;
+      </div>`;
+  }
 
-    this.elements.kakkyokuByoyakuResult.innerHTML = html;
+  /** @private */
+  _renderKikiBlock(kiki) {
+    if (!kiki) return '';
+
+    const formatItems = (items) => {
+      if (!items?.length) return '—';
+      const labels = items.map(item => {
+        const bits = [item.label || item.tenGod, item.element].filter(Boolean);
+        return bits.join('・');
+      });
+      return [...new Set(labels)].join('、');
+    };
+
+    const isChoukou = item => String(item?.label || '').startsWith('調候');
+    const primaryKi = (kiki.ki || []).filter(item => !isChoukou(item));
+    const choukouKi = (kiki.ki || []).filter(isChoukou);
+
+    return `
+      <div data-block="kiki" style="background-color: #f8f9f9; border-left: 4px solid #566573; padding: 8px 12px; margin-bottom: 4px; border-radius: 0 4px 4px 0;">
+        <div style="font-weight: bold; color: #2c3e50; margin-bottom: 4px;">【喜忌】</div>
+        <div style="font-size: 12px; color: #555;">
+          主軸の喜: ${formatItems(primaryKi)}
+        </div>
+        ${choukouKi.length ? `<div style="font-size: 12px; color: #555; margin-top: 2px;">調候の喜: ${formatItems(choukouKi)}</div>` : ''}
+        <div style="font-size: 12px; color: #555; margin-top: 2px;">
+          主軸の忌: ${formatItems(kiki.ji)}
+        </div>
+      </div>`;
   }
 
   /**

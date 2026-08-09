@@ -70,6 +70,13 @@ export class DaiunHyoukaCalculator {
       : primaryDiagnosis?.disease?.element;
     const medicineElements = medicineElement ? [medicineElement] : [];
 
+    // T-03f: medicineCaution（從重と同気で降格した薬）は吉側に使わない
+    const cautionElements = [...new Set(
+      (byoyakuResult.diagnoses || [])
+        .map(d => d.medicineCaution?.element)
+        .filter(Boolean)
+    )];
+
     // 代表病・代表薬とも五行が無ければ吉凶評価を行わない。
     if (!diseaseElement && medicineElements.length === 0) return [];
 
@@ -88,7 +95,7 @@ export class DaiunHyoukaCalculator {
           cycle.branch, fortuneResult
         );
         gouChuuAdjust = this._scoreDaiunGouChuu(
-          daiunGouChuuResult, medicineElements, diseaseElement
+          daiunGouChuuResult, medicineElements, diseaseElement, cautionElements
         );
       }
 
@@ -98,8 +105,12 @@ export class DaiunHyoukaCalculator {
         : originalBranchElement;
 
       // 天干・地支のスコア計算（合化後の五行で評価）
-      const stemScore = this._scoreElement(stemElement, medicineElements, diseaseElement);
-      const branchScore = this._scoreElement(branchElement, medicineElements, diseaseElement);
+      const stemScore = this._scoreElement(
+        stemElement, medicineElements, diseaseElement, cautionElements
+      );
+      const branchScore = this._scoreElement(
+        branchElement, medicineElements, diseaseElement, cautionElements
+      );
 
       // 蓋頭論分析
       const gaitouType = this._analyzeGaitou(stemElement, branchElement);
@@ -113,11 +124,11 @@ export class DaiunHyoukaCalculator {
       // 判定
       const judgment = this._scoreToJudgment(totalScore);
 
-      // 理由テキスト
+      // 理由テキスト（降格薬はスコア同様に役割表示からも除外）
       const reason = this._buildReason(
         cycle.stem, stemElement, stemTsuuhen.tsuuhen, stemScore,
         cycle.branch, branchElement, branchScore,
-        gaitouType, medicineElements, diseaseElement
+        gaitouType, medicineElements, diseaseElement, cautionElements
       );
 
       return {
@@ -138,16 +149,17 @@ export class DaiunHyoukaCalculator {
    * 五行のスコアを計算
    * @private
    */
-  _scoreElement(element, medicineElements, diseaseElement) {
+  _scoreElement(element, medicineElements, diseaseElement, cautionElements = []) {
     if (!element) return 0;
     let score = 0;
+    const isCaution = cautionElements.includes(element);
 
-    // 薬の五行と一致
-    if (medicineElements.includes(element)) score += 3;
+    // 薬の五行と一致（降格薬は加点しない）
+    if (!isCaution && medicineElements.includes(element)) score += 3;
     // 病の五行と一致
     if (element === diseaseElement) score -= 3;
-    // 薬を生む
-    if (medicineElements.some(m => GENERATE_CYCLE[element] === m)) score += 1;
+    // 薬を生む（降格薬は「生薬」加点もしない。S-06の土→金を吉にしない）
+    if (!isCaution && medicineElements.some(m => GENERATE_CYCLE[element] === m)) score += 1;
     // 病を生む
     if (GENERATE_CYCLE[element] === diseaseElement) score -= 1;
     // 病を剋す
@@ -202,9 +214,13 @@ export class DaiunHyoukaCalculator {
    */
   _buildReason(stem, stemEl, stemTsuuhen, stemScore,
                branch, branchEl, branchScore,
-               gaitouType, medicineElements, diseaseElement) {
-    const stemRole = this._describeRole(stemEl, medicineElements, diseaseElement);
-    const branchRole = this._describeRole(branchEl, medicineElements, diseaseElement);
+               gaitouType, medicineElements, diseaseElement, cautionElements = []) {
+    const stemRole = this._describeRole(
+      stemEl, medicineElements, diseaseElement, cautionElements
+    );
+    const branchRole = this._describeRole(
+      branchEl, medicineElements, diseaseElement, cautionElements
+    );
 
     let text = `天干 ${stem}（${stemTsuuhen}・${stemEl}）→ ${stemRole}【動】、`;
     text += `地支 ${branch}（${branchEl}）→ ${branchRole}【静】。`;
@@ -227,12 +243,15 @@ export class DaiunHyoukaCalculator {
    * 五行の役割を簡潔に記述
    * @private
    */
-  _describeRole(element, medicineElements, diseaseElement) {
+  _describeRole(element, medicineElements, diseaseElement, cautionElements = []) {
     if (!element) return '不明';
     const roles = [];
-    if (medicineElements.includes(element)) roles.push('薬の五行');
+    const isCaution = cautionElements.includes(element);
+    if (!isCaution && medicineElements.includes(element)) roles.push('薬の五行');
     if (element === diseaseElement) roles.push('病の五行');
-    if (medicineElements.some(m => GENERATE_CYCLE[element] === m)) roles.push('薬を生む');
+    if (!isCaution && medicineElements.some(m => GENERATE_CYCLE[element] === m)) {
+      roles.push('薬を生む');
+    }
     if (GENERATE_CYCLE[element] === diseaseElement) roles.push('病を生む');
     if (CONTROL_CYCLE[element] === diseaseElement) roles.push('病を剋す');
     if (medicineElements.some(m => CONTROL_CYCLE[element] === m)) roles.push('薬を剋す');
@@ -244,7 +263,7 @@ export class DaiunHyoukaCalculator {
    * 薬の五行と合→加点、病の五行と合→減点
    * @private
    */
-  _scoreDaiunGouChuu(gouChuuResult, medicineElements, diseaseElement) {
+  _scoreDaiunGouChuu(gouChuuResult, medicineElements, diseaseElement, cautionElements = []) {
     if (!gouChuuResult) return 0;
     let adjust = 0;
 
@@ -257,7 +276,7 @@ export class DaiunHyoukaCalculator {
 
     for (const item of transformedItems) {
       const re = item.resultElement;
-      if (medicineElements.includes(re)) adjust += 0.5;
+      if (!cautionElements.includes(re) && medicineElements.includes(re)) adjust += 0.5;
       if (re === diseaseElement) adjust -= 0.5;
     }
 
