@@ -7,7 +7,7 @@
 
 ```text
 ByoyakuResult {
-  // --- 後方互換（先頭診断） ---
+  // --- 後方互換（代表診断。表示配列の先頭とは限らない） ---
   disease: DiseaseView
   medicine: MedicineView
   summary: string
@@ -65,6 +65,8 @@ DiagnosisItem {
 DiseaseView {
   name: string
   element: string|null
+  causeElements?: string[]       // 気象病など、原因側が複数のとき
+  deficientElements?: string[]   // 不足側。薬五行と病五行を混同しない
   tenGod: string|null
   severity: 'mild'|'moderate'|'severe'
 }
@@ -88,6 +90,8 @@ MedicineView {
 | KeizenAnalyzer | `analyze(kakkyoku, strength, tsuuhen, fortune)` | 前段結果 | KeizenResult |
 | ByoyakuCalculator | `diagnose(input)` | 上記＋命式 | ByoyakuResult |
 
+`diagnose(input)` はv2の正規APIとし、`kishouResult` と `keizenResult` を必須にする。既存の位置引数形式を残す場合は移行用アダプタに限定し、新規コード・テストでは使用しない。
+
 ## 3. ResultRenderer 契約
 
 ```text
@@ -110,8 +114,10 @@ renderByoyakuSection({
 
 | 既存利用箇所 | 方針 |
 |--------------|------|
-| `disease` / `medicine` / `diagnoses` | 維持 |
-| `DaiunHyoukaCalculator` | 先頭の medicine.element / disease.element を継続利用。副薬は初版無視可 |
+| `disease` / `medicine` | `role='primary'` の用神損傷診断を代表値とする。該当なしなら表示先頭を使用 |
+| `diagnoses` | 表示順を保持。気象severe時は気象診断が先頭になりうる |
+| `diagnose` の位置引数 | v2ではobject入力へ移行。必要なら互換アダプタを一時提供 |
+| `DaiunHyoukaCalculator` | 代表値の非null五行だけを評価する。片側nullは片側評価、両側nullは吉凶評価をスキップ |
 | 旧UI `renderKakkyokuByoyaku` | `renderByoyakuSection` へ置換 |
 
 ## 5. データファイル
@@ -129,3 +135,5 @@ renderByoyakuSection({
 required: kakkyoku, strength, fortune, tsuuhen, kishou, keizen
 missing → CalculationError('病薬判定に必要なデータが不足しています')
 ```
+
+`DaiunHyoukaCalculator` へ渡す前に `disease.element` / `medicine.element` のnullを許容する。気象病の不足側を病五行へ代入して互換性を装ってはならない。
