@@ -1,0 +1,232 @@
+{
+  "正官格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "比劫奪官", "medicine": "財星", "reason": "財で官を生じ、比劫を洩らす" },
+        { "condition": "印多", "disease": "印多護官太過", "medicine": "財星", "reason": "財で印を制す" }
+      ],
+      "defaultDisease": { "disease": "身旺官軽", "medicine": "財星生官", "reason": "身が旺じて官が弱い。財で官を生じる" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "官殺多", "disease": "官殺混雑", "medicine": "印星", "reason": "印で官殺を化し日主を生じる" },
+        { "condition": "傷官透出", "disease": "傷官見官", "medicine": "印星", "reason": "印で傷官を制す" }
+      ],
+      "defaultDisease": { "disease": "身弱官旺", "medicine": "印星扶身", "reason": "身が弱く官が重い。印で日主を助ける" }
+    }
+  },
+  "偏官格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "比劫抗殺", "medicine": "食神制殺", "reason": "食神で殺を制し、身の勢いを洩らす" },
+        { "condition": "印多", "disease": "印多化殺太過", "medicine": "財星", "reason": "財で印を破り殺の威を復す" }
+      ],
+      "defaultDisease": { "disease": "身旺殺軽", "medicine": "財星生殺", "reason": "身が旺じて殺が制御を失う。財で殺を生じる" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "官殺多", "disease": "殺重身軽", "medicine": "印星", "reason": "印で殺を化し日主を生じる（殺印相生）" },
+        { "condition": "食神透出", "disease": "制殺太過", "medicine": "財星", "reason": "財で食神を洩らし殺を生じる" }
+      ],
+      "defaultDisease": { "disease": "身弱殺旺", "medicine": "印星化殺", "reason": "殺が重く身が弱い。印で殺を化し日主を扶ける" }
+    }
+  },
+  "正財格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "比劫奪財", "medicine": "官殺", "reason": "官殺で比劫を制し財を護る" },
+        { "condition": "印多", "disease": "印多洩財気", "medicine": "財星", "reason": "財運で印を破る" }
+      ],
+      "defaultDisease": { "disease": "身旺財弱", "medicine": "食傷生財", "reason": "身が旺じて財が弱い。食傷で財を生じる" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "財多", "disease": "財多身弱", "medicine": "印星", "reason": "印で身を助け財を任ぜしめる" },
+        { "condition": "官殺多", "disease": "財生殺旺", "medicine": "印星", "reason": "印で殺を化し身を助ける" }
+      ],
+      "defaultDisease": { "disease": "身弱任財不能", "medicine": "印星扶身", "reason": "身が弱く財を任じられない。印で身を強める" }
+    }
+  },
+  "偏財格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "群劫争財", "medicine": "官殺", "reason": "官殺で比劫を制し財を護る" },
+        { "condition": "印多", "disease": "印旺財滞", "medicine": "財星", "reason": "財運で印を破る" }
+      ],
+      "defaultDisease": { "disease": "身旺偏財軽", "medicine": "食傷生財", "reason": "身が旺じて偏財が弱い。食傷で財を生じる" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "財多", "disease": "偏財多身弱", "medicine": "印星", "reason": "印で身を助ける" },
+        { "condition": "官殺多", "disease": "財引殺攻身", "medicine": "印星", "reason": "印で殺を化し身を助ける" }
+      ],
+      "defaultDisease": { "disease": "身弱財旺", "medicine": "印星扶身", "reason": "身が弱く偏財が重い。印で日主を助ける" }
+    }
+  },
+  "傷官格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "比劫生傷官太過", "medicine": "財星", "reason": "財で傷官の気を洩らす" },
+        { "condition": "印多", "disease": "印制傷官太過", "medicine": "財星", "reason": "財で印を破り傷官を活かす" }
+      ],
+      "defaultDisease": { "disease": "傷官旺身旺", "medicine": "財星洩傷", "reason": "傷官と身がともに旺じる。財で傷官を洩らす" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "傷官透出", "disease": "傷官洩身太過", "medicine": "印星", "reason": "印で傷官を制し身を助ける" },
+        { "condition": "官殺多", "disease": "傷官見官", "medicine": "印星", "reason": "印で傷官を制し官を護る" }
+      ],
+      "defaultDisease": { "disease": "身弱傷官旺", "medicine": "印星制傷", "reason": "身が弱く傷官が身を洩らす。印で制す" }
+    }
+  },
+  "食神格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "比劫生食太過", "medicine": "財星", "reason": "財で食神の気を洩らす" },
+        { "condition": "印多", "disease": "梟印奪食", "medicine": "財星", "reason": "財で印を制し食神を護る" }
+      ],
+      "defaultDisease": { "disease": "身旺食神軽", "medicine": "財星", "reason": "食神で生財し、身の気を洩らす" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "食神透出", "disease": "食神洩身太過", "medicine": "印星", "reason": "印で食神を制し身を助ける" },
+        { "condition": "官殺多", "disease": "食神制殺不足", "medicine": "食神", "reason": "食神を強め殺を制す" }
+      ],
+      "defaultDisease": { "disease": "身弱食旺", "medicine": "印星扶身", "reason": "身が弱く食神が身を洩らす。印で身を助ける" }
+    }
+  },
+  "印綬格": {
+    "strong": {
+      "diseases": [
+        { "condition": "印多", "disease": "印多身旺無依", "medicine": "財星", "reason": "財で印を制し用神を活かす" },
+        { "condition": "比劫多", "disease": "印旺比劫重", "medicine": "官殺", "reason": "官殺で比劫を制する" }
+      ],
+      "defaultDisease": { "disease": "印旺身強", "medicine": "財星破印", "reason": "印が旺じて身が強すぎる。財で印を制す" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "財多", "disease": "貪財壊印", "medicine": "比劫", "reason": "比劫で財を制し印を護る" },
+        { "condition": "官殺多", "disease": "殺重印軽", "medicine": "印星", "reason": "印を強め殺を化す" }
+      ],
+      "defaultDisease": { "disease": "身弱印軽", "medicine": "印星強化", "reason": "身が弱く印も軽い。印星運で身を助ける" }
+    }
+  },
+  "偏印格": {
+    "strong": {
+      "diseases": [
+        { "condition": "印多", "disease": "梟神太旺", "medicine": "財星", "reason": "財で偏印を制す" },
+        { "condition": "比劫多", "disease": "偏印助劫", "medicine": "官殺", "reason": "官殺で比劫を制す" }
+      ],
+      "defaultDisease": { "disease": "偏印旺身強", "medicine": "財星制印", "reason": "偏印が旺じて身が強すぎる。財で制す" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "食神透出", "disease": "梟印奪食", "medicine": "財星", "reason": "財で偏印を制し食神を護る" },
+        { "condition": "財多", "disease": "財破偏印", "medicine": "比劫", "reason": "比劫で財を分け印を護る" }
+      ],
+      "defaultDisease": { "disease": "身弱偏印", "medicine": "印星扶身", "reason": "身が弱い。偏印で身を助ける" }
+    }
+  },
+  "建禄格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "比劫重畳無依", "medicine": "官殺", "reason": "官殺で比劫を制する" },
+        { "condition": "印多", "disease": "印旺無用", "medicine": "財星", "reason": "財で印を破り用神を立てる" }
+      ],
+      "defaultDisease": { "disease": "身旺無用神", "medicine": "財官", "reason": "身旺で用神なし。財官運で用神を得る" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "官殺多", "disease": "官殺攻身", "medicine": "印星", "reason": "印で官殺を化し身を助ける" },
+        { "condition": "財多", "disease": "財多身弱", "medicine": "印星", "reason": "印で身を助ける" }
+      ],
+      "defaultDisease": { "disease": "建禄身弱", "medicine": "印星扶身", "reason": "建禄あるが他の要素で身が弱い。印で助ける" }
+    }
+  },
+  "陽刃格": {
+    "strong": {
+      "diseases": [
+        { "condition": "比劫多", "disease": "陽刃比劫重畳", "medicine": "官殺", "reason": "官殺で陽刃・比劫を制す" },
+        { "condition": "印多", "disease": "印助陽刃太過", "medicine": "財星", "reason": "財で印を破る" }
+      ],
+      "defaultDisease": { "disease": "陽刃身強", "medicine": "官殺制刃", "reason": "陽刃で身が極めて強い。官殺で制す" }
+    },
+    "weak": {
+      "diseases": [
+        { "condition": "官殺多", "disease": "官殺攻身", "medicine": "印星", "reason": "印で殺を化し身を助ける" },
+        { "condition": "財多", "disease": "財引殺攻刃", "medicine": "印星", "reason": "印で身を助ける" }
+      ],
+      "defaultDisease": { "disease": "陽刃身弱", "medicine": "印星扶身", "reason": "陽刃あるが身が弱い。印で助ける" }
+    }
+  },
+  "曲直仁寿格": {
+    "strong": {
+      "diseases": [],
+      "defaultDisease": { "disease": "金気混入", "medicine": "水木運", "reason": "金（剋木の五行）が入ると破格。水木の運が薬" }
+    },
+    "weak": {
+      "diseases": [],
+      "defaultDisease": { "disease": "木気不足", "medicine": "水生木運", "reason": "水で木を生じる運が薬" }
+    }
+  },
+  "稼穡格": {
+    "strong": {
+      "diseases": [],
+      "defaultDisease": { "disease": "木気混入", "medicine": "火土運", "reason": "木（剋土の五行）が入ると破格。火土の運が薬" }
+    },
+    "weak": {
+      "diseases": [],
+      "defaultDisease": { "disease": "土気不足", "medicine": "火生土運", "reason": "火で土を生じる運が薬" }
+    }
+  },
+  "炎上格": {
+    "strong": {
+      "diseases": [],
+      "defaultDisease": { "disease": "水気混入", "medicine": "木火運", "reason": "水（剋火の五行）が入ると破格。木火の運が薬" }
+    },
+    "weak": {
+      "diseases": [],
+      "defaultDisease": { "disease": "火気不足", "medicine": "木生火運", "reason": "木で火を生じる運が薬" }
+    }
+  },
+  "潤下格": {
+    "strong": {
+      "diseases": [],
+      "defaultDisease": { "disease": "土気混入", "medicine": "金水運", "reason": "土（剋水の五行）が入ると破格。金水の運が薬" }
+    },
+    "weak": {
+      "diseases": [],
+      "defaultDisease": { "disease": "水気不足", "medicine": "金生水運", "reason": "金で水を生じる運が薬" }
+    }
+  },
+  "従革格": {
+    "strong": {
+      "diseases": [],
+      "defaultDisease": { "disease": "火気混入", "medicine": "土金運", "reason": "火（剋金の五行）が入ると破格。土金の運が薬" }
+    },
+    "weak": {
+      "diseases": [],
+      "defaultDisease": { "disease": "金気不足", "medicine": "土生金運", "reason": "土で金を生じる運が薬" }
+    }
+  },
+  "従殺格": {
+    "strong": {
+      "diseases": [],
+      "defaultDisease": { "disease": "日主得根", "medicine": "財星生殺", "reason": "日主に根が出ると破格。財で殺を生じるのが薬" }
+    },
+    "weak": {
+      "diseases": [],
+      "defaultDisease": { "disease": "殺気不足", "medicine": "財星生殺", "reason": "財で殺を生じるのが薬" }
+    }
+  },
+  "従財格": {
+    "strong": {
+      "diseases": [],
+      "defaultDisease": { "disease": "印運来臨", "medicine": "食傷生財", "reason": "印運が来ると破格。食傷で財を生じるのが薬" }
+    },
+    "weak": {
+      "diseases": [],
+      "defaultDisease": { "disease": "財気不足", "medicine": "食傷生財", "reason": "食傷で財を生じるのが薬" }
+    }
+  }
+}

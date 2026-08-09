@@ -84,6 +84,14 @@ export class DataLoader {
   }
 
   /**
+   * 格局ルールデータを読み込む
+   * @returns {Promise<Object>}
+   */
+  async loadKakkyokuRules() {
+    return await this.loadJSON('kakkyoku_rules.json');
+  }
+
+  /**
    * キャッシュをクリア
    */
   clearCache() {

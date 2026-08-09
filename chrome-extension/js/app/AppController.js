@@ -6,6 +6,11 @@ import { FortuneCalculator } from "../core/FortuneCalculator.js";
 import { GreatFortuneCalculator } from "../core/GreatFortuneCalculator.js";
 import { JuuniunCalculator } from "../core/JuuniunCalculator.js";
 import { TsuuhenCalculator } from "../core/TsuuhenCalculator.js";
+import { DayMasterStrengthAssessor } from "../core/DayMasterStrengthAssessor.js";
+import { KakkyokuCalculator } from "../core/KakkyokuCalculator.js";
+import { ByoyakuCalculator } from "../core/ByoyakuCalculator.js";
+import { DaiunHyoukaCalculator } from "../core/DaiunHyoukaCalculator.js";
+import { GouChuuCalculator } from "../core/GouChuuCalculator.js";
 import { FormRenderer } from "../ui/FormRenderer.js";
 import { ResultRenderer } from "../ui/ResultRenderer.js";
 import { ImageExporter } from "../ui/ImageExporter.js";
@@ -18,6 +23,13 @@ export class AppController {
         this.greatFortuneCalculator = null;
         this.juuniunCalculator = null;
         this.tsuuhenCalculator = null;
+        this.strengthAssessor = null;
+        this.kakkyokuCalculator = null;
+        this.byoyakuCalculator = null;
+        this.daiunHyoukaCalculator = null;
+        this.gouChuuCalculator = null;
+        this.stemBranchData = null;
+        this.kakkyokuRules = null;
 
         this.formRenderer = null;
         this.resultRenderer = null;
@@ -54,6 +66,15 @@ export class AppController {
             await this.juuniunCalculator.initialize();
 
             this.tsuuhenCalculator = new TsuuhenCalculator();
+
+            // 格局・病薬関連の初期化
+            this.stemBranchData = await this.dataLoader.loadStemBranchMaster();
+            this.kakkyokuRules = await this.dataLoader.loadKakkyokuRules();
+            this.strengthAssessor = new DayMasterStrengthAssessor(this.stemBranchData);
+            this.kakkyokuCalculator = new KakkyokuCalculator(this.stemBranchData);
+            this.byoyakuCalculator = new ByoyakuCalculator(this.kakkyokuRules);
+            this.gouChuuCalculator = new GouChuuCalculator();
+            this.daiunHyoukaCalculator = new DaiunHyoukaCalculator(this.tsuuhenCalculator, this.gouChuuCalculator);
 
             // イベントリスナーのセットアップ
             this.setupEventListeners();
@@ -139,13 +160,44 @@ export class AppController {
             );
             console.log("Great fortune cycles calculated:", greatFortuneCycles);
 
+            // 4.5 合冲分析
+            const gouChuuResult = this.gouChuuCalculator.analyzeNatalChart(fortune);
+            console.log("GouChuu analyzed:", gouChuuResult);
+
+            // 5. 身旺弱判定
+            const strengthResult = this.strengthAssessor.assess(fortune, juuniunResults, gouChuuResult);
+            console.log("Strength assessed:", strengthResult);
+
+            // 6. 格局判定
+            const kakkyokuResult = this.kakkyokuCalculator.calculate(
+                fortune, tsuuhenResults, strengthResult, gouChuuResult
+            );
+            console.log("Kakkyoku calculated:", kakkyokuResult);
+
+            // 7. 病薬判定
+            const byoyakuResult = this.byoyakuCalculator.diagnose(
+                kakkyokuResult, strengthResult, fortune, tsuuhenResults, gouChuuResult
+            );
+            console.log("Byoyaku diagnosed:", byoyakuResult);
+
+            // 8. 大運吉凶判定
+            const daiunEvaluations = this.daiunHyoukaCalculator.evaluate(
+                greatFortuneCycles, byoyakuResult, fortune, strengthResult
+            );
+            console.log("Daiun evaluated:", daiunEvaluations);
+
             // 結果表示
             this.resultRenderer.showResults(
                 fortune,
                 juuniunResults,
                 tsuuhenResults,
                 greatFortuneCycles,
-                inputData.year
+                inputData.year,
+                kakkyokuResult,
+                byoyakuResult,
+                strengthResult,
+                daiunEvaluations,
+                gouChuuResult
             );
 
         } catch (error) {

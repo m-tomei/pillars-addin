@@ -93,13 +93,46 @@
         <!-- 命式テーブル -->
         <div id="fortune-result"></div>
 
-        <!-- 大運 -->
-        <div id="great-fortune-result"></div>
+        <!-- 格局・病薬診断 -->
+        <div id="kakkyoku-byoyaku-section">
+          <div class="toggle-row">
+            <label class="toggle-label" for="kakkyoku-toggle">格局・病薬診断</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="kakkyoku-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="kakkyoku-byoyaku-result"></div>
+        </div>
+
+        <!-- 合冲分析 -->
+        <div id="gouchuu-section" style="display: none;">
+          <div class="toggle-row">
+            <label class="toggle-label" for="gouchuu-toggle">合冲分析</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="gouchuu-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="gouchuu-result"></div>
+        </div>
+
+        <!-- 大運（吉凶トグル付き） -->
+        <div id="great-fortune-section">
+          <div class="toggle-row">
+            <label class="toggle-label" for="great-fortune-toggle">大運 吉凶判定</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="great-fortune-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="great-fortune-result"></div>
+        </div>
       </section>
     </main>
 
     <footer>
-      <p>四柱推命 命式計算 v1.0.0</p>
+      <p>四柱推命 命式計算 v1.5.0</p>
     </footer>
   </div>
 
