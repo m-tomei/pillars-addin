@@ -292,6 +292,21 @@ export class ResultRenderer {
     this.elements.kakkyokuByoyakuResult.innerHTML = html;
   }
 
+  /**
+   * 命式本体の表示を維持したまま、病薬診断の失敗を表示する。
+   */
+  showByoyakuError() {
+    if (!this.elements.kakkyokuByoyakuResult) return;
+
+    this.elements.kakkyokuByoyakuResult.innerHTML = `
+      <div style="margin-top: 12px; color: #c0392b;">
+        病薬診断の計算に失敗しました。命式と大運はそのまま参照できます。
+      </div>`;
+    if (this.elements.kakkyokuByoyakuSection) {
+      this.elements.kakkyokuByoyakuSection.style.display = "block";
+    }
+  }
+
   /** @private */
   _severityLabel(severity) {
     if (severity === 'severe') return '重度';
@@ -312,8 +327,12 @@ export class ResultRenderer {
     const choukou = kishou.choukou || {};
     const direction = choukou.direction || 'なし';
     const primary = (choukou.primaryElements || []).join('・') || '—';
-    const secondary = (choukou.secondaryElements || []).length
-      ? `（${choukou.secondaryElements.join('・')}）`
+    const secondaryItems = choukou.secondary || [];
+    const secondary = secondaryItems.length
+      ? `（${secondaryItems.map(item => {
+          const elements = (item.elements || []).join('・') || '—';
+          return `${item.direction || '副調候'} → ${elements}`;
+        }).join(' ／ ')}）`
       : '';
 
     return `

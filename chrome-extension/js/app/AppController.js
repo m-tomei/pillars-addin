@@ -195,21 +195,38 @@ export class AppController {
             console.log("Great fortune cycles calculated:", greatFortuneCycles);
 
             // 5〜8. 病薬オプションON時のみ（OFF時は各計算機を呼ばない）
-            const optional = runOptionalDiagnostics({
-                kishouAssessor: this.kishouAssessor,
-                gouChuuCalculator: this.gouChuuCalculator,
-                strengthAssessor: this.strengthAssessor,
-                kakkyokuCalculator: this.kakkyokuCalculator,
-                keizenAnalyzer: this.keizenAnalyzer,
-                byoyakuCalculator: this.byoyakuCalculator,
-                daiunHyoukaCalculator: this.daiunHyoukaCalculator
-            }, {
-                byoyakuEnabled: this.byoyakuEnabled,
-                fortune,
-                juuniunResults,
-                tsuuhenResults,
-                greatFortuneCycles
-            });
+            let byoyakuError = null;
+            let optional;
+            try {
+                optional = runOptionalDiagnostics({
+                    kishouAssessor: this.kishouAssessor,
+                    gouChuuCalculator: this.gouChuuCalculator,
+                    strengthAssessor: this.strengthAssessor,
+                    kakkyokuCalculator: this.kakkyokuCalculator,
+                    keizenAnalyzer: this.keizenAnalyzer,
+                    byoyakuCalculator: this.byoyakuCalculator,
+                    daiunHyoukaCalculator: this.daiunHyoukaCalculator
+                }, {
+                    byoyakuEnabled: this.byoyakuEnabled,
+                    fortune,
+                    juuniunResults,
+                    tsuuhenResults,
+                    greatFortuneCycles
+                });
+            } catch (error) {
+                // 病薬側の失敗で命式・大運まで失わない（BYO-DD-07 §5）。
+                console.error("Byoyaku calculation error:", error);
+                byoyakuError = error;
+                optional = {
+                    kishouResult: null,
+                    gouChuuResult: null,
+                    strengthResult: null,
+                    kakkyokuResult: null,
+                    keizenResult: null,
+                    byoyakuResult: null,
+                    daiunEvaluations: null
+                };
+            }
 
             if (this.byoyakuEnabled) {
                 console.log("Kishou assessed:", optional.kishouResult);
@@ -234,6 +251,10 @@ export class AppController {
                 optional.daiunEvaluations,
                 plan.showGouChuuSection ? optional.gouChuuResult : null
             );
+
+            if (byoyakuError) {
+                this.resultRenderer.showByoyakuError();
+            }
 
             this.hasCalculatedResults = true;
 

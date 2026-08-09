@@ -101,7 +101,7 @@ function samplePayload(overrides = {}) {
                 choukou: {
                     direction: '冷ます',
                     primaryElements: ['水'],
-                    secondaryElements: []
+                    secondary: [{ direction: '潤す', elements: ['水'], reason: '燥の調候' }]
                 }
             },
             keizen: {
@@ -163,6 +163,7 @@ test('ResultRenderer - 気象・主軸・調候副薬・喜忌を描画する', 
 
     assert.ok(html.includes('【気象】熱・燥'), '気象ブロック');
     assert.ok(html.includes('調候: 冷ます → 水'), '調候方向');
+    assert.ok(html.includes('（潤す → 水）'), '副調候');
     assert.ok(html.includes('【主軸】正官格（官殺を守る）'), '主軸ブロック');
     assert.ok(html.includes('破: 傷官見官'), '破要約');
     assert.ok(html.includes('【病1・主】比劫奪財'), '主病ラベル');
@@ -203,7 +204,7 @@ test('ResultRenderer - 雕は四薬ではなく琢で表示する', () => {
                 humidity: '中和',
                 severity: 'mild',
                 summary: '気象はおおむね穏やか',
-                choukou: { direction: 'なし', primaryElements: [], secondaryElements: [] }
+                choukou: { direction: 'なし', primaryElements: [], secondary: [] }
             },
             keizen: {
                 pillar: { kakkyoku: '正官格', youshinLabel: '官殺を守る', isEstablished: true },
@@ -242,4 +243,17 @@ test('ResultRenderer - showResults はOFF時に病薬セクションを隠す', 
 
     assert.strictEqual(nodes.get('kakkyoku-byoyaku-section').style.display, 'none');
     assert.strictEqual(nodes.get('kakkyoku-byoyaku-result').innerHTML, '');
+});
+
+test('ResultRenderer - 病薬失敗時は病薬位置にエラーを表示する', () => {
+    const nodes = createDomStub();
+    const renderer = new ResultRenderer();
+
+    renderer.showByoyakuError();
+
+    assert.strictEqual(nodes.get('kakkyoku-byoyaku-section').style.display, 'block');
+    assert.ok(
+        nodes.get('kakkyoku-byoyaku-result').innerHTML.includes('病薬診断の計算に失敗'),
+        '失敗メッセージ'
+    );
 });

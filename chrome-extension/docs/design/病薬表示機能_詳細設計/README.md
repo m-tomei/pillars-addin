@@ -39,5 +39,6 @@
 - PR#11 マージ済。Phase A **承認**
 - Sprint B1 完了（スイッチ／計算分岐／旧トグル廃止）
 - Sprint B2 完了（気象・継善・從重・四病四薬・調候突合）
-- Sprint B3 完了（T-04 / T-07 / T-08）。manifest v2.0.0
+- Sprint B3 実装完了（T-04 / T-08・T-07自動受入）。manifest v2.0.0
+- T-07のChrome実画面手動受入A〜C（PNG含む）はPRで確認待ち
 - 詳細: [11_実行計画.md](./11_実行計画.md)
