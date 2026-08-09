@@ -1288,7 +1288,7 @@ export class ByoyakuCalculator {
 
     for (const diag of diagnoses) {
       if (diag.medicine?.element || diag.medicine?.tenGod) {
-        const key = `${diag.medicine.tenGod || ''}:${diag.medicine.element || ''}`;
+        const key = `${diag.medicine.name || diag.medicine.tenGod || ''}:${diag.medicine.element || ''}`;
         if (!seenKi.has(key)) {
           seenKi.add(key);
           ki.push({
@@ -1300,7 +1300,7 @@ export class ByoyakuCalculator {
       }
       if (diag.medicineSecondary?.elements) {
         for (const el of diag.medicineSecondary.elements) {
-          const key = `choukou:${el}`;
+          const key = `${diag.medicineSecondary.name || '調候'}:${el}`;
           if (!seenKi.has(key)) {
             seenKi.add(key);
             ki.push({ label: diag.medicineSecondary.name, element: el });

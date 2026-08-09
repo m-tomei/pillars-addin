@@ -188,6 +188,15 @@ test('Acceptance S-02 - 複数診断・枯/生', async () => {
             assert.strictEqual(hit.medicine.exists, false, '薬なし');
         }
     }
+
+    createDomStub();
+    const renderer = new ResultRenderer();
+    renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
+    const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
+    assert.ok(html.includes('【四病四薬】四病: 枯'), '枯を明示');
+    assert.ok(html.includes('四薬: 生'), '生を明示');
+    assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 2, '用神損傷の2診断だけを表示');
+    assert.strictEqual((html.match(/調候（温める）・火/g) || []).length, 1, '喜忌の調候薬を重複させない');
 });
 
 test('Acceptance S-03 - 丑月気象は寒・温める', async () => {
@@ -233,7 +242,7 @@ test('Acceptance S-03 - 丑月気象は寒・温める', async () => {
         byoyakuResult
     });
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    const order = ['kishou', 'keizen', 'strength', 'diagnosis', 'balance', 'kiki']
+    const order = ['kishou', 'keizen', 'strength', 'four-disease', 'diagnosis', 'balance', 'kiki']
         .map(name => html.indexOf(`data-block="${name}"`));
     for (let i = 1; i < order.length; i++) {
         assert.ok(order[i] > order[i - 1], `S-03 表示順 ${i}`);
@@ -243,6 +252,11 @@ test('Acceptance S-03 - 丑月気象は寒・温める', async () => {
         '気象寒側を表示'
     );
     assert.ok(html.includes('温める'), '調候温めるを表示');
+    assert.strictEqual(
+        (html.match(/data-block="diagnosis"/g) || []).length,
+        1,
+        '気象は上段ブロックと重複診断しない'
+    );
 });
 
 test('Acceptance S-04 - 身弱十神病＋從重旺/長＋夏の調候', async () => {
@@ -277,6 +291,13 @@ test('Acceptance S-04 - 身弱十神病＋從重旺/長＋夏の調候', async (
     for (const el of scenario.expectedAfterKishou.primaryElementsIncludes) {
         assert.ok(kishouResult.choukou.primaryElements.includes(el), `調候に${el}`);
     }
+
+    createDomStub();
+    const renderer = new ResultRenderer();
+    renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
+    const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
+    assert.ok(html.includes('四病: 旺（火） ／ 四薬: 長（水）'), '從重の四病四薬を明示');
+    assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 2, '用神損傷の2診断だけを表示');
 });
 
 test('Acceptance S-05 - 雕は四薬null・処置琢', async () => {
@@ -298,6 +319,13 @@ test('Acceptance S-05 - 雕は四薬null・処置琢', async () => {
     for (const el of after.treatmentElementsIncludes) {
         assert.ok(byoyakuResult.treatmentElements.includes(el), `treatmentElementsに${el}`);
     }
+
+    createDomStub();
+    const renderer = new ResultRenderer();
+    renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
+    const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
+    assert.ok(html.includes('四病: 雕 ／ 処置: 琢（木）'), '四薬nullと琢を分離表示');
+    assert.ok(!html.includes('琢の薬'), '琢を四薬名にしない');
 
     const dist = scenario.expectedWeightedDistribution;
     assert.strictEqual(byoyakuResult.heaviestElement, dist.heaviestElement);
@@ -324,6 +352,17 @@ test('Acceptance S-06 - 卯月土旺は損を維持', async () => {
         || byoyakuResult.diagnoses.some(d => d.disease.name.includes(scenario.expectedCurrent.disease)),
         '身旺殺軽系の診断'
     );
+
+    createDomStub();
+    const renderer = new ResultRenderer();
+    renderer.renderByoyakuSection({
+        strengthResult: optional.strengthResult,
+        kakkyokuResult,
+        byoyakuResult
+    });
+    const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
+    assert.ok(html.includes('四病: 旺（土） ／ 四薬: 損（木）'), '四病層の土旺を明示');
+    assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 1, '気象診断を重複表示しない');
 });
 
 test('Acceptance S-07 - 卯月木旺は長', async () => {
@@ -344,4 +383,10 @@ test('Acceptance S-07 - 卯月木旺は長', async () => {
         approxEqual(byoyakuResult.heaviestRatio, scenario.expectedWeightedDistribution.heaviestRatio),
         `從重 ${byoyakuResult.heaviestRatio}`
     );
+
+    createDomStub();
+    const renderer = new ResultRenderer();
+    renderer.renderByoyakuSection({ strengthResult, kakkyokuResult, byoyakuResult });
+    const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
+    assert.ok(html.includes('四病: 旺（木） ／ 四薬: 長（金）'), '長の成立を明示');
 });

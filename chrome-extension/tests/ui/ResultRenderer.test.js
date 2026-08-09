@@ -42,6 +42,8 @@ function samplePayload(overrides = {}) {
         byoyakuResult: {
             fourDisease: '旺',
             fourMedicine: '損',
+            fourDiseaseElement: '木',
+            fourMedicineElement: '金',
             treatmentMode: null,
             disease: { name: '比劫奪財', element: '木', tenGod: '比肩', severity: 'moderate' },
             medicine: { name: '官殺', element: '金', tenGod: '正官', exists: true, location: '時干' },
@@ -137,7 +139,7 @@ function samplePayload(overrides = {}) {
     };
 }
 
-test('ResultRenderer - 表示順は気象→主軸→身旺弱→病薬→バランス→喜忌', () => {
+test('ResultRenderer - 表示順は気象→主軸→身旺弱→四病四薬→病薬→バランス→喜忌', () => {
     createDomStub();
     const renderer = new ResultRenderer();
     const payload = samplePayload();
@@ -147,7 +149,7 @@ test('ResultRenderer - 表示順は気象→主軸→身旺弱→病薬→バラ
     assert.ok(html.includes('病薬診断'), 'ヘッダは病薬診断');
     assert.ok(!html.includes('格局・病薬'), '旧ヘッダは出さない');
 
-    const order = ['kishou', 'keizen', 'strength', 'diagnosis', 'balance', 'kiki']
+    const order = ['kishou', 'keizen', 'strength', 'four-disease', 'diagnosis', 'balance', 'kiki']
         .map(name => html.indexOf(`data-block="${name}"`));
     for (let i = 1; i < order.length; i++) {
         assert.ok(order[i - 1] >= 0, `${i - 1}番目ブロックが存在する`);
@@ -155,7 +157,7 @@ test('ResultRenderer - 表示順は気象→主軸→身旺弱→病薬→バラ
     }
 });
 
-test('ResultRenderer - 気象・主軸・調候副薬・喜忌を描画する', () => {
+test('ResultRenderer - 気象・主軸・四病四薬・喜忌を重複なく描画する', () => {
     createDomStub();
     const renderer = new ResultRenderer();
     renderer.renderByoyakuSection(samplePayload());
@@ -166,9 +168,10 @@ test('ResultRenderer - 気象・主軸・調候副薬・喜忌を描画する', 
     assert.ok(html.includes('（潤す → 水）'), '副調候');
     assert.ok(html.includes('【主軸】正官格（官殺を守る）'), '主軸ブロック');
     assert.ok(html.includes('破: 傷官見官'), '破要約');
-    assert.ok(html.includes('【病1・主】比劫奪財'), '主病ラベル');
-    assert.ok(html.includes('【病2・副（気象）】'), '気象副病ラベル');
-    assert.ok(html.includes('【薬・調候】'), '副薬ブロック');
+    assert.ok(html.includes('【四病四薬】四病: 旺（木） ／ 四薬: 損（金）'), '四病四薬を明示');
+    assert.ok(html.includes('【病】比劫奪財'), '主病ラベル');
+    assert.ok(!html.includes('気象偏枯'), '上段と重複する気象診断は出さない');
+    assert.ok(!html.includes('【薬・調候】'), '調候薬を診断ごとに重複表示しない');
     assert.ok(html.includes('【バランス】病重薬軽'), 'バランス');
     assert.ok(html.includes('今は薬不足'), 'バランス読解文');
     assert.ok(html.includes('喜: 官殺・金'), '喜');
@@ -182,7 +185,10 @@ test('ResultRenderer - 雕は四薬ではなく琢で表示する', () => {
         byoyakuResult: {
             fourDisease: '雕',
             fourMedicine: null,
+            fourDiseaseElement: null,
+            fourMedicineElement: null,
             treatmentMode: '琢',
+            treatmentElements: ['木'],
             diagnoses: [{
                 role: 'primary',
                 source: 'keizen',
@@ -217,7 +223,8 @@ test('ResultRenderer - 雕は四薬ではなく琢で表示する', () => {
     }));
 
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
-    assert.ok(html.includes('（琢）'), '琢ラベル');
+    assert.ok(html.includes('【四病四薬】四病: 雕 ／ 処置: 琢（木）'), '琢を四薬と分離');
+    assert.ok(!html.includes('【薬】対立導入（琢）'), '個別薬に四薬処置を混ぜない');
     assert.ok(!html.includes('nullの薬'), 'null薬ラベルを出さない');
     assert.ok(html.includes('目立った破なし'), '破なし文言');
 });

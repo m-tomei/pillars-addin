@@ -258,7 +258,7 @@ export class ResultRenderer {
       return;
     }
 
-    const diagnosesToRender = byoyakuResult.diagnoses?.length
+    const allDiagnoses = byoyakuResult.diagnoses?.length
       ? byoyakuResult.diagnoses
       : (byoyakuResult.disease ? [{
           role: 'primary',
@@ -270,6 +270,9 @@ export class ResultRenderer {
           fourMedicine: byoyakuResult.fourMedicine,
           treatmentMode: byoyakuResult.treatmentMode
         }] : []);
+    // 気象は上段の気象ブロックで表示済み。用神損傷診断がある場合は重複掲載しない。
+    const doctrinalDiagnoses = allDiagnoses.filter(diag => diag.source !== 'kishou');
+    const diagnosesToRender = doctrinalDiagnoses.length ? doctrinalDiagnoses : allDiagnoses;
 
     const html = `
       <div class="byoyaku-panel" style="margin-top: 12px; border: 2px solid #8e44ad; border-radius: 8px; overflow: hidden;">
@@ -280,8 +283,9 @@ export class ResultRenderer {
           ${this._renderKishouBlock(byoyakuResult.kishou)}
           ${this._renderKeizenBlock(byoyakuResult.keizen, kakkyokuResult)}
           ${this._renderStrengthBlock(strengthResult)}
+          ${this._renderFourDiseaseBlock(byoyakuResult)}
           ${diagnosesToRender.length
-            ? this._renderDiagnosisBlocks(diagnosesToRender, byoyakuResult)
+            ? this._renderDiagnosisBlocks(diagnosesToRender)
             : '<div style="color: #c0392b; margin-bottom: 10px;">病薬を特定できませんでした</div>'}
           ${this._renderBalanceBlock(byoyakuResult.balance)}
           ${this._renderKikiBlock(byoyakuResult.kiki)}
@@ -358,16 +362,13 @@ export class ResultRenderer {
       || '';
     const established = pillar.isEstablished ?? kakkyokuResult?.isEstablished;
     const breakReason = kakkyokuResult?.breakReason || '';
-    const statusHTML = established
-      ? '<span style="color: #27ae60;">成格</span>'
-      : `<span style="color: #e74c3c;">破格${breakReason ? `（${breakReason}）` : ''}</span>`;
-
     const breaks = keizen?.breaks || [];
+    const statusHTML = established
+      ? `<span style="color: ${breaks.length ? '#e67e22' : '#27ae60'};">成格${breaks.length ? '・損傷あり' : ''}</span>`
+      : `<span style="color: #e74c3c;">破格${breakReason ? `（${breakReason}）` : ''}</span>`;
     const breakText = breaks.length
       ? breaks.map(b => b.name || b.condition).filter(Boolean).join('、')
       : '目立った破なし';
-    const summary = keizen?.summary || '';
-
     return `
       <div data-block="keizen" style="background-color: #f4ecf7; border-left: 4px solid #8e44ad; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
         <div style="font-weight: bold; color: #6c3483; margin-bottom: 4px;">
@@ -376,7 +377,6 @@ export class ResultRenderer {
         <div style="font-size: 12px; color: #555; margin-bottom: 2px;">
           破: ${breakText}
         </div>
-        ${summary ? `<div style="font-size: 11px; color: #555;">${summary}</div>` : ''}
       </div>`;
   }
 
@@ -410,25 +410,38 @@ export class ResultRenderer {
   }
 
   /** @private */
-  _medicineKindLabel(diag, byoyakuResult) {
-    const fourMedicine = diag.fourMedicine !== undefined
-      ? diag.fourMedicine
-      : byoyakuResult.fourMedicine;
-    if (fourMedicine) return `${fourMedicine}の薬`;
-    const treatmentMode = diag.treatmentMode ?? byoyakuResult.treatmentMode;
-    if (treatmentMode === '琢') return '琢';
-    return '';
+  _renderFourDiseaseBlock(byoyakuResult) {
+    const disease = byoyakuResult.fourDisease || '—';
+    const diseaseElement = byoyakuResult.fourDiseaseElement
+      ? `（${byoyakuResult.fourDiseaseElement}）`
+      : '';
+    let treatment;
+    if (byoyakuResult.fourMedicine) {
+      const medicineElement = byoyakuResult.fourMedicineElement
+        ? `（${byoyakuResult.fourMedicineElement}）`
+        : '';
+      treatment = `四薬: ${byoyakuResult.fourMedicine}${medicineElement}`;
+    } else if (byoyakuResult.treatmentMode) {
+      const treatmentElements = (byoyakuResult.treatmentElements || []).join('・');
+      treatment = `処置: ${byoyakuResult.treatmentMode}${treatmentElements ? `（${treatmentElements}）` : ''}`;
+    } else {
+      treatment = '四薬: —';
+    }
+
+    return `
+      <div data-block="four-disease" style="background-color: #fdf2e9; border-left: 4px solid #d35400; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+        <div style="font-weight: bold; color: #a04000;">
+          【四病四薬】四病: ${disease}${diseaseElement} ／ ${treatment}
+        </div>
+      </div>`;
   }
 
   /** @private */
-  _renderDiagnosisBlocks(diagnosesToRender, byoyakuResult) {
+  _renderDiagnosisBlocks(diagnosesToRender) {
     const diseaseBg = '#fdedec';
     const diseaseBorder = '#e74c3c';
     const medicineBg = '#eafaf1';
     const medicineBorder = '#27ae60';
-    const secondaryMedBg = '#eaf2f8';
-    const secondaryMedBorder = '#2980b9';
-
     return diagnosesToRender.map((diag, idx) => {
       const roleTag = diag.role === 'primary'
         ? '主'
@@ -437,14 +450,8 @@ export class ResultRenderer {
         ? `病${idx + 1}・${roleTag}`
         : (diag.role === 'secondary' ? `病・${roleTag}` : '病');
 
-      const fourDisease = diag.fourDisease != null
-        ? diag.fourDisease
-        : (diag.source === 'kishou' ? null : byoyakuResult.fourDisease);
       const severityLabel = this._severityLabel(diag.disease?.severity);
-      const diseaseMeta = [
-        fourDisease ? `${fourDisease}の病` : null,
-        severityLabel
-      ].filter(Boolean).join('・');
+      const diseaseMeta = severityLabel;
 
       const causeEls = (diag.disease?.causeElements || []).join('・');
       const elementLineParts = [];
@@ -453,7 +460,6 @@ export class ResultRenderer {
       if (diag.disease?.tenGod) elementLineParts.push(`十神: ${diag.disease.tenGod}`);
 
       const medicine = diag.medicine || {};
-      const medicineKind = this._medicineKindLabel(diag, byoyakuResult);
       const medicineExistsHTML = medicine.exists
         ? `<span style="color: #27ae60; font-weight: bold;">&#10003; 命式中に薬あり（${medicine.location}）</span>`
         : `<span style="color: #e67e22;">&#10007; 命式中に薬なし（行運で補う）</span>`;
@@ -461,23 +467,7 @@ export class ResultRenderer {
       let choukouNote = '';
       if (medicine.choukouAligned) {
         choukouNote = '<div style="font-size: 11px; color: #2980b9; margin-top: 2px;">（調候一致）</div>';
-      } else if (diag.medicineSecondary) {
-        choukouNote = '<div style="font-size: 11px; color: #2980b9; margin-top: 2px;">（調候併記）</div>';
       }
-
-      const secondary = diag.medicineSecondary;
-      const secondaryHTML = secondary ? `
-          <div data-block="medicine-secondary" style="background-color: ${secondaryMedBg}; border-left: 4px solid ${secondaryMedBorder}; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
-            <div style="font-weight: bold; color: #1a5276; margin-bottom: 4px;">
-              【薬・調候】${secondary.name}${secondary.element ? ` → ${secondary.element}` : ''}
-              ${(secondary.elements || []).length > 1 ? `（${secondary.elements.join('・')}）` : ''}
-            </div>
-            <div style="font-size: 11px;">
-              ${secondary.exists
-                ? `<span style="color: #27ae60;">&#10003; 命式中にあり（${secondary.location}）</span>`
-                : `<span style="color: #e67e22;">&#10007; 命式中になし（行運で補う）</span>`}
-            </div>
-          </div>` : '';
 
       return `
           <div data-block="diagnosis" data-role="${diag.role || ''}" data-source="${diag.source || ''}">
@@ -488,19 +478,20 @@ export class ResultRenderer {
               ${elementLineParts.length ? `<div style="font-size: 12px; color: #555;">${elementLineParts.join(' ／ ')}</div>` : ''}
             </div>
 
-            <div style="background-color: ${medicineBg}; border-left: 4px solid ${medicineBorder}; padding: 8px 12px; margin-bottom: ${secondary ? '4px' : '10px'}; border-radius: 0 4px 4px 0;">
+            <div style="background-color: ${medicineBg}; border-left: 4px solid ${medicineBorder}; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
               <div style="font-weight: bold; color: #1e8449; margin-bottom: 4px;">
-                【薬】${medicine.name || '—'}${medicineKind ? `（${medicineKind}）` : ''}${medicine.element ? ` → ${medicine.element}` : ''}
+                【薬】${medicine.name || '—'}${medicine.element ? ` → ${medicine.element}` : ''}
               </div>
               <div style="font-size: 12px; color: #555; margin-bottom: 4px;">
-                ${diag.reason || ''}
+                ${(diag.reason || '')
+                  .replace(/（主軸の薬と調候を併記）$/, '')
+                  .replace(/（格局薬と調候が一致）$/, '')}
               </div>
               <div style="font-size: 11px;">
                 ${medicineExistsHTML}
               </div>
               ${choukouNote}
             </div>
-            ${secondaryHTML}
           </div>`;
     }).join('');
   }
@@ -534,10 +525,11 @@ export class ResultRenderer {
 
     const formatItems = (items) => {
       if (!items?.length) return '—';
-      return items.map(item => {
+      const labels = items.map(item => {
         const bits = [item.label || item.tenGod, item.element].filter(Boolean);
         return bits.join('・');
-      }).join('、');
+      });
+      return [...new Set(labels)].join('、');
     };
 
     return `
@@ -549,7 +541,6 @@ export class ResultRenderer {
         <div style="font-size: 12px; color: #555; margin-top: 2px;">
           忌: ${formatItems(kiki.ji)}
         </div>
-        ${kiki.note ? `<div style="font-size: 11px; color: #888; margin-top: 4px;">${kiki.note}</div>` : ''}
       </div>`;
   }
 
