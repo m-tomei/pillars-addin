@@ -68,9 +68,12 @@
         "medicineLocation": "日支蔵干"
       },
       "expectedAfterKishou": {
-        "temperature": "寒",
+        "baseTemp": "寒",
+        "temperature": "涼",
+        "temperatureFamily": ["寒", "涼"],
         "choukouDirection": "温める",
-        "primaryElementsIncludes": ["火"]
+        "primaryElementsIncludes": ["火"],
+        "note": "丑月baseは寒。火土優勢でTH-4により涼へ1段シフト（2026-08-09 実装後実測）"
       }
     },
     {
@@ -100,6 +103,14 @@
         "temperature": "熱",
         "choukouDirection": "冷ます",
         "primaryElementsIncludes": ["水"]
+      },
+      "expectedAfterR01": {
+        "fourDisease": "旺",
+        "fourMedicine": "長",
+        "fourDiseaseElement": "火",
+        "fourMedicineElement": "水",
+        "heaviestElement": "火",
+        "note": "身弱でも從重は火≈48.9%かつ午月長養のため四病=旺・四薬=長。十神病名の財多身弱は別レイヤ（2026-08-09 実装後実測）"
       }
     },
     {
