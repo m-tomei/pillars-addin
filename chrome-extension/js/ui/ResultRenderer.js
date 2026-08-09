@@ -471,6 +471,17 @@ export class ResultRenderer {
         choukouNote = '<div style="font-size: 11px; color: #2980b9; margin-top: 2px;">（調候一致）</div>';
       }
 
+      const caution = diag.medicineCaution;
+      const cautionHTML = caution ? `
+            <div data-block="medicine-caution" style="background-color: #fef5e7; border-left: 4px solid #d68910; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+              <div style="font-weight: bold; color: #9a7d0a; margin-bottom: 2px;">
+                【注意】${caution.name || '—'}${caution.element ? ` → ${caution.element}` : ''}
+              </div>
+              <div style="font-size: 11px; color: #555;">
+                ${caution.reason || '五行偏重と同気のため喜から除外'}
+              </div>
+            </div>` : '';
+
       return `
           <div data-block="diagnosis" data-role="${diag.role || ''}" data-source="${diag.source || ''}">
             <div style="background-color: ${diseaseBg}; border-left: 4px solid ${diseaseBorder}; padding: 8px 12px; margin-bottom: 4px; border-radius: 0 4px 4px 0;">
@@ -480,20 +491,24 @@ export class ResultRenderer {
               ${elementLineParts.length ? `<div style="font-size: 12px; color: #555;">${elementLineParts.join(' ／ ')}</div>` : ''}
             </div>
 
-            <div style="background-color: ${medicineBg}; border-left: 4px solid ${medicineBorder}; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
+            <div style="background-color: ${medicineBg}; border-left: 4px solid ${medicineBorder}; padding: 8px 12px; margin-bottom: ${caution ? '4px' : '10px'}; border-radius: 0 4px 4px 0;">
               <div style="font-weight: bold; color: #1e8449; margin-bottom: 4px;">
                 【${medicineLabel}】${medicine.name || '—'}${medicine.element ? ` → ${medicine.element}` : ''}
               </div>
               <div style="font-size: 12px; color: #555; margin-bottom: 4px;">
                 ${(diag.reason || '')
-                  .replace(/（主軸の薬と調候を併記）$/, '')
-                  .replace(/（格局薬と調候が一致）$/, '')}
+                  .replace(/（主軸の薬と調候を併記）/g, '')
+                  .replace(/（格局薬と調候が一致）/g, '')
+                  .replace(/（五行偏重（.）と同気のため主軸（[^）]+）を優先）/g, '')
+                  .replace(/（五行偏重と同気の薬を除外）/g, '')
+                  .trim()}
               </div>
               <div style="font-size: 11px;">
                 ${medicineExistsHTML}
               </div>
               ${choukouNote}
             </div>
+            ${cautionHTML}
           </div>`;
     }).join('');
   }

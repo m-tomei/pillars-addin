@@ -185,7 +185,16 @@ test('Acceptance S-02 - 複数診断・枯/生', async () => {
         assert.ok(hit, `診断「${expected.disease}」がある`);
         assert.ok(hit.medicine.name.includes(expected.medicine), `薬「${expected.medicine}」`);
         if (expected.medicineExists === false) {
-            assert.strictEqual(hit.medicine.exists, false, '薬なし');
+            assert.strictEqual(hit.medicine.exists, false, '官殺は薬なし');
+        }
+        if (expected.medicineExists === true) {
+            assert.strictEqual(hit.medicine.exists, true, '財星は薬あり');
+            if (expected.medicineLocationIncludes) {
+                assert.ok(
+                    String(hit.medicine.location || '').includes(expected.medicineLocationIncludes),
+                    `薬所在に${expected.medicineLocationIncludes}`
+                );
+            }
         }
     }
 
@@ -210,19 +219,21 @@ test('Acceptance S-03 - 丑月気象は寒・温める', async () => {
     assert.strictEqual(byoyakuResult.fourMedicine, scenario.expectedCurrent.fourMedicine);
     assert.ok(byoyakuResult.disease.name.includes(scenario.expectedCurrent.disease));
 
-    const tempFamily = scenario.expectedAfterKishou.temperatureFamily
-        || [scenario.expectedAfterKishou.temperature];
-    assert.ok(
-        tempFamily.includes(kishouResult.temperature),
-        `気象は寒側（実測=${kishouResult.temperature}）`
+    assert.strictEqual(
+        kishouResult.scores?.baseTemp,
+        scenario.expectedAfterKishou.baseTemp,
+        '丑月baseTempは寒'
     );
-    if (scenario.expectedAfterKishou.baseTemp) {
-        assert.strictEqual(
-            kishouResult.scores?.baseTemp,
-            scenario.expectedAfterKishou.baseTemp,
-            '丑月baseTempは寒'
-        );
-    }
+    assert.strictEqual(
+        kishouResult.temperature,
+        scenario.expectedAfterKishou.temperature,
+        'TH-4後の表示気温は涼'
+    );
+    assert.strictEqual(
+        kishouResult.humidity,
+        scenario.expectedAfterKishou.humidity,
+        'TH-5で燥'
+    );
     assert.strictEqual(
         kishouResult.choukou.direction,
         scenario.expectedAfterKishou.choukouDirection
@@ -335,7 +346,7 @@ test('Acceptance S-05 - 雕は四薬null・処置琢', async () => {
     );
 });
 
-test('Acceptance S-06 - 卯月土旺は損を維持', async () => {
+test('Acceptance S-06 - 卯月土旺は損維持・最終薬は官殺', async () => {
     const scenario = scenarios.find(s => s.id === 'S-06');
     const { fortune, optional } = await runScenario(scenario);
     assertPillars(fortune, scenario.expectedPillars, 'S-06');
@@ -347,11 +358,19 @@ test('Acceptance S-06 - 卯月土旺は損を維持', async () => {
     assert.strictEqual(byoyakuResult.fourDiseaseElement, after.fourDiseaseElement);
     assert.strictEqual(byoyakuResult.fourMedicine, after.fourMedicine);
     assert.strictEqual(byoyakuResult.fourMedicineElement, after.fourMedicineElement);
-    assert.ok(
-        byoyakuResult.disease.name.includes(scenario.expectedCurrent.disease)
-        || byoyakuResult.diagnoses.some(d => d.disease.name.includes(scenario.expectedCurrent.disease)),
-        '身旺殺軽系の診断'
-    );
+
+    const t03f = scenario.expectedAfterT03f;
+    assert.ok(byoyakuResult.medicine.name.includes(t03f.finalMedicine), '最終薬は官殺');
+    assert.strictEqual(byoyakuResult.medicine.element, t03f.finalMedicineElement);
+    const primary = byoyakuResult.diagnoses.find(d => d.source === 'keizen');
+    assert.ok(primary.medicineCaution?.name.includes(t03f.medicineCaution), '財星生殺を注意へ');
+    assert.strictEqual(primary.medicineCaution.element, t03f.medicineCautionElement);
+    for (const el of t03f.kikiKiExcludes) {
+        assert.ok(!byoyakuResult.kiki.ki.some(item => item.element === el), `喜に${el}を入れない`);
+    }
+    for (const el of t03f.kikiKiIncludes) {
+        assert.ok(byoyakuResult.kiki.ki.some(item => item.element === el), `喜に${el}`);
+    }
 
     createDomStub();
     const renderer = new ResultRenderer();
@@ -364,8 +383,10 @@ test('Acceptance S-06 - 卯月土旺は損を維持', async () => {
     assert.ok(html.includes('【五行偏重】旺（土） → 損（木）'), '四病層の土旺を明示');
     assert.ok(html.includes('用神損傷: なし'), '成格と損傷なしを明示');
     assert.ok(html.includes('【主軸の病】身旺殺軽'), '主軸病を別ラベルで表示');
-    assert.ok(html.includes('【主軸の薬】財星生殺'), '主軸薬を別ラベルで表示');
-    assert.ok(html.includes('【主軸病薬の総合評価】病重薬重（病力3 / 薬力2）'), '単体強度とは別の総合スコアを明示');
+    assert.ok(html.includes('【主軸の薬】官殺'), '最終主軸薬は官殺');
+    assert.ok(html.includes('【注意】財星生殺'), '降格薬を注意表示');
+    assert.ok(html.includes('主軸の喜:') && html.includes('官殺・金'), '喜に官殺');
+    assert.ok(!html.includes('主軸の喜: 財星生殺'), '喜に財星生殺を出さない');
     assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 1, '気象診断を重複表示しない');
 });
 

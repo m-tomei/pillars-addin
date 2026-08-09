@@ -41,7 +41,7 @@
         "fourMedicine": "生",
         "diagnoses": [
           { "disease": "比劫奪財", "medicine": "官殺", "medicineExists": false },
-          { "disease": "印多洩財気", "medicine": "財星" }
+          { "disease": "印多洩財気", "medicine": "財星", "medicineExists": true, "medicineLocationIncludes": "月支蔵干" }
         ]
       },
       "expectedAfterR01": { "fourMedicine": "生" }
@@ -70,10 +70,10 @@
       "expectedAfterKishou": {
         "baseTemp": "寒",
         "temperature": "涼",
-        "temperatureFamily": ["寒", "涼"],
+        "humidity": "燥",
         "choukouDirection": "温める",
         "primaryElementsIncludes": ["火"],
-        "note": "丑月baseは寒。火土優勢でTH-4により涼へ1段シフト（2026-08-09 実装後実測）"
+        "note": "丑月baseは寒。火土優勢でTH-4により涼へ1段シフト。燥はTH-5（|dry−wet|≥1.5）で妥当（2026-08-09）"
       }
     },
     {
@@ -194,6 +194,15 @@
         "stage": "その他",
         "fourMedicine": "損",
         "fourMedicineElement": "木"
+      },
+      "expectedAfterT03f": {
+        "finalMedicine": "官殺",
+        "finalMedicineElement": "金",
+        "medicineCaution": "財星生殺",
+        "medicineCautionElement": "土",
+        "kikiKiExcludes": ["土"],
+        "kikiKiIncludes": ["金"],
+        "note": "土旺と同気の財星生殺は喜から除外し、主軸官殺（金）を最終薬とする"
       }
     },
     {

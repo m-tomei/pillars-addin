@@ -689,6 +689,59 @@ test('ByoyakuCalculator - 調候副薬の命式内所在を返す', () => {
     assert.strictEqual(primary.medicineSecondary.location, '年干');
 });
 
+test('ByoyakuCalculator - T-03f 從重と同気の主軸薬は官殺へ差し替え', () => {
+    // S-06系: 甲日主・偏官格・身旺・土旺。財星生殺（土）は從重と同気。
+    const fortuneResult = {
+        yearPillar:  { stem: '庚', branch: '戌', hiddenStems: ['戊', '辛', '丁'] },
+        monthPillar: { stem: '己', branch: '卯', hiddenStems: ['乙'] },
+        dayPillar:   { stem: '甲', branch: '午', hiddenStems: ['丁', '己'] },
+        hourPillar:  { stem: '己', branch: '巳', hiddenStems: ['丙', '戊', '庚'] }
+    };
+    const result = calculator.diagnose({
+        kakkyokuResult: {
+            kakkyoku: '偏官格',
+            category: 'regular',
+            isEstablished: true
+        },
+        strengthResult: { strength: 'strong', score: 4 },
+        fortuneResult,
+        tsuuhenResult: {
+            year: { tsuuhen: '正官' },
+            month: { tsuuhen: '偏財' },
+            hour: { tsuuhen: '偏財' }
+        },
+        kishouResult: {
+            temperature: '熱',
+            humidity: '燥',
+            severity: 'moderate',
+            isExtreme: true,
+            choukou: { direction: '冷ます', primaryElements: ['水', '金'], secondary: [] },
+            summary: '気象は熱・燥寄り'
+        },
+        keizenResult: {
+            pillar: {
+                kakkyoku: '偏官格',
+                youshinCategory: 'officer',
+                youshinLabel: '官殺',
+                youshinElement: '金',
+                isEstablished: true
+            },
+            breaks: [],
+            summary: '偏官格（成格）'
+        }
+    });
+
+    assert.strictEqual(result.fourDisease, '旺');
+    assert.strictEqual(result.fourDiseaseElement, '土');
+    assert.strictEqual(result.medicine.name, '官殺');
+    assert.strictEqual(result.medicine.element, '金');
+    const primary = result.diagnoses.find(d => d.source === 'keizen');
+    assert.strictEqual(primary.medicineCaution.name, '財星生殺');
+    assert.strictEqual(primary.medicineCaution.element, '土');
+    assert.ok(!result.kiki.ki.some(item => item.element === '土'), '喜に土を入れない');
+    assert.ok(result.kiki.ki.some(item => item.element === '金'), '喜に金');
+});
+
 test('ByoyakuCalculator - diagnose v2 は kishou/keizen 必須', () => {
     const base = {
         kakkyokuResult: { kakkyoku: '正官格', isEstablished: true },
