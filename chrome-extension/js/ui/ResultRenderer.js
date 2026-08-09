@@ -368,14 +368,14 @@ export class ResultRenderer {
       : `<span style="color: #e74c3c;">破格${breakReason ? `（${breakReason}）` : ''}</span>`;
     const breakText = breaks.length
       ? breaks.map(b => b.name || b.condition).filter(Boolean).join('、')
-      : '目立った破なし';
+      : 'なし';
     return `
       <div data-block="keizen" style="background-color: #f4ecf7; border-left: 4px solid #8e44ad; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
         <div style="font-weight: bold; color: #6c3483; margin-bottom: 4px;">
           【主軸】${kakkyoku}${youshinLabel ? `（${youshinLabel}）` : ''}　${statusHTML}
         </div>
         <div style="font-size: 12px; color: #555; margin-bottom: 2px;">
-          破: ${breakText}
+          用神損傷: ${breakText}
         </div>
       </div>`;
   }
@@ -509,11 +509,14 @@ export class ResultRenderer {
     };
     const label = balance?.label || '病なし薬なし';
     const reading = readings[label] || balance?.reading || '';
+    const scores = balance?.diseaseScore != null && balance?.medicineScore != null
+      ? `（病力${balance.diseaseScore} / 薬力${balance.medicineScore}）`
+      : '';
 
     return `
       <div data-block="balance" style="background-color: #fef9e7; border-left: 4px solid #f39c12; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0;">
         <div style="font-weight: bold; color: #9a7d0a; margin-bottom: 4px;">
-          【主軸病薬のバランス】${label}
+          【主軸病薬の総合評価】${label}${scores}
         </div>
         <div style="font-size: 12px; color: #555;">
           ${reading}

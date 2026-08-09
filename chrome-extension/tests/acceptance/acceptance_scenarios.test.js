@@ -362,8 +362,10 @@ test('Acceptance S-06 - 卯月土旺は損を維持', async () => {
     });
     const html = renderer.elements.kakkyokuByoyakuResult.innerHTML;
     assert.ok(html.includes('【五行偏重】旺（土） → 損（木）'), '四病層の土旺を明示');
+    assert.ok(html.includes('用神損傷: なし'), '成格と損傷なしを明示');
     assert.ok(html.includes('【主軸の病】身旺殺軽'), '主軸病を別ラベルで表示');
     assert.ok(html.includes('【主軸の薬】財星生殺'), '主軸薬を別ラベルで表示');
+    assert.ok(html.includes('【主軸病薬の総合評価】病重薬重（病力3 / 薬力2）'), '単体強度とは別の総合スコアを明示');
     assert.strictEqual((html.match(/data-block="diagnosis"/g) || []).length, 1, '気象診断を重複表示しない');
 });
 

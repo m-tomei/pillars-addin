@@ -170,14 +170,14 @@ test('ResultRenderer - 気象・主軸・四病四薬・喜忌を重複なく描
     assert.ok(html.includes('調候: 冷ます → 水'), '調候方向');
     assert.ok(html.includes('（潤す → 水）'), '副調候');
     assert.ok(html.includes('【主軸】正官格（官殺を守る）'), '主軸ブロック');
-    assert.ok(html.includes('破: 傷官見官'), '破要約');
+    assert.ok(html.includes('用神損傷: 傷官見官'), '用神損傷の要約');
     assert.ok(html.includes('【五行偏重】旺（木） → 損（金）'), '五行偏重分類を明示');
     assert.ok(html.includes('四病四薬による命式全体の分類'), '判定層の違いを明示');
     assert.ok(html.includes('【主軸の病】比劫奪財'), '主軸病ラベル');
     assert.ok(html.includes('【主軸の薬】官殺'), '主軸薬ラベル');
     assert.ok(!html.includes('気象偏枯'), '上段と重複する気象診断は出さない');
     assert.ok(!html.includes('【薬・調候】'), '調候薬を診断ごとに重複表示しない');
-    assert.ok(html.includes('【主軸病薬のバランス】病重薬軽'), 'バランス');
+    assert.ok(html.includes('【主軸病薬の総合評価】病重薬軽（病力2 / 薬力1）'), '総合評価とスコア');
     assert.ok(html.includes('今は薬不足'), 'バランス読解文');
     assert.ok(html.includes('主軸の喜: 官殺・金'), '主軸の喜');
     assert.ok(html.includes('調候の喜: 調候（冷ます）・水'), '調候の喜を分離');
@@ -232,7 +232,7 @@ test('ResultRenderer - 雕は四薬ではなく琢で表示する', () => {
     assert.ok(html.includes('【五行偏重】雕 → 処置 琢（木）'), '琢を四薬と分離');
     assert.ok(!html.includes('【主軸の薬】対立導入（琢）'), '個別薬に四薬処置を混ぜない');
     assert.ok(!html.includes('nullの薬'), 'null薬ラベルを出さない');
-    assert.ok(html.includes('目立った破なし'), '破なし文言');
+    assert.ok(html.includes('用神損傷: なし'), '損傷なし文言');
 });
 
 test('ResultRenderer - showResults はOFF時に病薬セクションを隠す', () => {
