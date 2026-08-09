@@ -8,37 +8,44 @@ function createSpyDeps() {
         kakkyoku: 0,
         keizen: 0,
         byoyaku: 0,
-        daiun: 0
+        daiun: 0,
+        order: [],
+        diagnoseInput: null
     };
 
     const deps = {
         kishouAssessor: {
             assess: () => {
                 calls.kishou += 1;
+                calls.order.push('kishou');
                 return { temperature: '寒', humidity: '中', clarity: '不明', choukou: { direction: '温める', primaryElements: ['火'], secondary: [] } };
             }
         },
         gouChuuCalculator: {
             analyzeNatalChart: () => {
                 calls.gouChuu += 1;
+                calls.order.push('gouChuu');
                 return { relations: [] };
             }
         },
         strengthAssessor: {
             assess: () => {
                 calls.strength += 1;
+                calls.order.push('strength');
                 return { strength: 'strong', score: 5 };
             }
         },
         kakkyokuCalculator: {
             calculate: () => {
                 calls.kakkyoku += 1;
+                calls.order.push('kakkyoku');
                 return { kakkyoku: '正官格', isEstablished: true };
             }
         },
         keizenAnalyzer: {
             analyze: () => {
                 calls.keizen += 1;
+                calls.order.push('keizen');
                 return {
                     pillar: { kakkyoku: '正官格', youshinCategory: 'officer', youshinLabel: '官殺', isEstablished: true },
                     breaks: [],
@@ -50,6 +57,8 @@ function createSpyDeps() {
         byoyakuCalculator: {
             diagnose: (input) => {
                 calls.byoyaku += 1;
+                calls.order.push('byoyaku');
+                calls.diagnoseInput = input;
                 return {
                     disease: { name: '比劫奪官', element: '木' },
                     medicine: { name: '財星', element: '土', exists: true },
@@ -64,6 +73,7 @@ function createSpyDeps() {
         daiunHyoukaCalculator: {
             evaluate: () => {
                 calls.daiun += 1;
+                calls.order.push('daiun');
                 return [{ judgment: '吉' }];
             }
         }
@@ -121,6 +131,14 @@ test('AC-02 ON時は optional calculator を各1回呼ぶ', () => {
     assert.strictEqual(calls.keizen, 1, 'Keizen を Byoyaku より前に実行');
     assert.strictEqual(calls.byoyaku, 1);
     assert.strictEqual(calls.daiun, 1);
+    assert.deepStrictEqual(
+        calls.order,
+        ['kishou', 'gouChuu', 'strength', 'kakkyoku', 'keizen', 'byoyaku', 'daiun'],
+        '設計順に実行'
+    );
+    assert.ok(calls.diagnoseInput.kishouResult, 'object APIへkishouResultを渡す');
+    assert.ok(calls.diagnoseInput.keizenResult, 'object APIへkeizenResultを渡す');
+    assert.ok(calls.diagnoseInput.gouChuuResult, 'object APIへgouChuuResultを渡す');
     assert.ok(result.byoyakuResult, 'byoyakuResult が返る');
     assert.ok(result.kishouResult, 'kishouResult が返る');
     assert.ok(result.keizenResult, 'keizenResult が返る');

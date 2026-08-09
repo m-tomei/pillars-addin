@@ -44,6 +44,35 @@ test('KeizenAnalyzer - 正財格・身旺・比劫多 → 比劫奪財', () => {
   assert.ok(result.summary.includes('比劫奪財'));
 });
 
+test('KeizenAnalyzer - KZ-01 正官格・傷官透出 → 傷官見官', () => {
+  const kakkyokuResult = {
+    kakkyoku: '正官格',
+    category: 'regular',
+    isEstablished: false,
+    breakReason: '傷官見官'
+  };
+  const strengthResult = { strength: 'weak', score: 1 };
+  const fortuneResult = {
+    yearPillar: { stem: '丁', branch: '午', hiddenStems: ['丁', '己'] },
+    monthPillar: { stem: '辛', branch: '酉', hiddenStems: ['辛'] },
+    dayPillar: { stem: '甲', branch: '子', hiddenStems: ['癸'] },
+    hourPillar: { stem: '丙', branch: '寅', hiddenStems: ['甲', '丙', '戊'] }
+  };
+  const tsuuhenResult = {
+    year: { tsuuhen: '傷官' },
+    month: { tsuuhen: '正官' },
+    hour: { tsuuhen: '食神' }
+  };
+
+  const result = analyzer.analyze(
+    kakkyokuResult, strengthResult, tsuuhenResult, fortuneResult
+  );
+  const breakItem = result.breaks.find(b => b.name === '傷官見官');
+  assert.ok(breakItem, 'breaksに傷官見官がある');
+  assert.strictEqual(breakItem.condition, '傷官透出');
+  assert.strictEqual(breakItem.severityHint, 'severe');
+});
+
 test('KeizenAnalyzer - 印綬格・身弱・財多 → 貪財壊印', () => {
   const kakkyokuResult = {
     kakkyoku: '印綬格',

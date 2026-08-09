@@ -38,5 +38,5 @@
 
 - PR#11 マージ済。Phase A **承認**
 - Sprint B1 完了（スイッチ／計算分岐／旧トグル廃止）
-- Sprint B2 進行中（KishouAssessor 完了 → 次は KeizenAnalyzer）
+- Sprint B2 進行中（KishouAssessor / KeizenAnalyzer / object API 完了 → 次は T-03c）
 - 詳細: [11_実行計画.md](./11_実行計画.md)

@@ -126,7 +126,7 @@ export class AppController {
      */
     handleByoyakuOptionChange(enabled) {
         this.byoyakuEnabled = Boolean(enabled);
-        if (!this.initialized) return;
+        if (!this.initialized || !this.hasCalculatedResults) return;
 
         try {
             this.inputManager.getFormInput();

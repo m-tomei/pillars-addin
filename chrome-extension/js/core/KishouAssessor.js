@@ -45,7 +45,7 @@ export class KishouAssessor {
 
     const monthBranch = fortuneResult.monthPillar.branch;
     const baseTemp = MONTH_BASE_TEMP[monthBranch] || '中和';
-    const dist = options.elementDist || this._calcSimpleDistribution(fortuneResult);
+    const dist = options.elementDist || this._calcWeightedDistribution(fortuneResult);
 
     const fire = dist['火'] || 0;
     const earth = dist['土'] || 0;
@@ -87,6 +87,7 @@ export class KishouAssessor {
         coldScore,
         dryScore,
         wetScore,
+        elementDist: { ...dist },
         baseTemp,
         monthBranch
       },
@@ -98,24 +99,41 @@ export class KishouAssessor {
   }
 
   /**
-   * 簡易五行分布（天干1.0 / 地支1.0、月支×2.0）
+   * 標準柱ウェイトによる五行分布（BYO-DD-02 §3）
+   *
+   * 年干・時干=1.0、月干=1.2、日干は除外。
+   * 蔵干=主0.7/中0.5/余0.3、月支主気のみ×2.0。
    * @private
    */
-  _calcSimpleDistribution(fortune) {
+  _calcWeightedDistribution(fortune) {
     const dist = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
-    const pillars = ['yearPillar', 'monthPillar', 'dayPillar', 'hourPillar'];
+    const pillars = [
+      { key: 'yearPillar', stemWeight: 1.0, monthMainBoost: 1.0 },
+      { key: 'monthPillar', stemWeight: 1.2, monthMainBoost: 2.0 },
+      { key: 'dayPillar', stemWeight: 0, monthMainBoost: 1.0 },
+      { key: 'hourPillar', stemWeight: 1.0, monthMainBoost: 1.0 }
+    ];
 
-    for (const key of pillars) {
+    for (const { key, stemWeight, monthMainBoost } of pillars) {
       const pillar = fortune[key];
       if (!pillar) continue;
 
       const stemEl = STEM_ELEMENTS[pillar.stem];
-      if (stemEl) dist[stemEl] += 1.0;
+      if (stemEl && stemWeight > 0) dist[stemEl] += stemWeight;
 
+      const hiddenStems = pillar.hiddenStems || [];
+      if (hiddenStems.length > 0) {
+        const hiddenWeights = [0.7 * monthMainBoost, 0.5, 0.3];
+        for (let i = 0; i < hiddenStems.length; i++) {
+          const hiddenEl = STEM_ELEMENTS[hiddenStems[i]];
+          if (hiddenEl) dist[hiddenEl] += hiddenWeights[i] ?? 0.3;
+        }
+        continue;
+      }
+
+      // 単体利用で蔵干が省略された場合は、地支本気を主気として扱う。
       const branchEl = BRANCH_ELEMENTS[pillar.branch];
-      if (!branchEl) continue;
-      const weight = key === 'monthPillar' ? 2.0 : 1.0;
-      dist[branchEl] += weight;
+      if (branchEl) dist[branchEl] += 0.7 * monthMainBoost;
     }
 
     return dist;

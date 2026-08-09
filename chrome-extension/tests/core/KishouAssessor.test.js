@@ -102,6 +102,38 @@ test('KishouAssessor - 燥湿境界 TH-5', () => {
   assert.strictEqual(mid.humidity, '中');
 });
 
+test('KishouAssessor - KS-05 水勢が強ければ湿', () => {
+  const fortune = {
+    yearPillar: { stem: '壬', branch: '子' },
+    monthPillar: { stem: '癸', branch: '亥' },
+    dayPillar: { stem: '庚', branch: '子' },
+    hourPillar: { stem: '辛', branch: '亥' }
+  };
+  const result = assessor.assess(fortune, {
+    elementDist: { 木: 0, 火: 0, 土: 0, 金: 0.5, 水: 3 }
+  });
+  assert.strictEqual(result.humidity, '湿');
+});
+
+test('KishouAssessor - 標準柱ウェイトを適用', () => {
+  const fortune = {
+    yearPillar: { stem: '甲', branch: '寅', hiddenStems: ['甲', '丙', '戊'] },
+    monthPillar: { stem: '丙', branch: '午', hiddenStems: ['丁', '己'] },
+    dayPillar: { stem: '庚', branch: '子', hiddenStems: ['癸'] },
+    hourPillar: { stem: '壬', branch: '申', hiddenStems: ['庚', '壬', '戊'] }
+  };
+  const result = assessor.assess(fortune);
+  const roundedDist = Object.fromEntries(
+    Object.entries(result.scores.elementDist).map(([element, value]) => [element, Number(value.toFixed(1))])
+  );
+
+  assert.deepStrictEqual(
+    roundedDist,
+    { 木: 1.7, 火: 3.1, 土: 1.1, 金: 0.7, 水: 2.2 },
+    '月干1.2、月支主気×2、日干除外を適用'
+  );
+});
+
 test('KishouAssessor - 必須データ不足はエラー', () => {
   assert.throws(
     () => assessor.assess({}),
