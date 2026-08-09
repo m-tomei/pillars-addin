@@ -6,6 +6,7 @@ function createSpyDeps() {
         gouChuu: 0,
         strength: 0,
         kakkyoku: 0,
+        keizen: 0,
         byoyaku: 0,
         daiun: 0
     };
@@ -35,12 +36,28 @@ function createSpyDeps() {
                 return { kakkyoku: '正官格', isEstablished: true };
             }
         },
+        keizenAnalyzer: {
+            analyze: () => {
+                calls.keizen += 1;
+                return {
+                    pillar: { kakkyoku: '正官格', youshinCategory: 'officer', youshinLabel: '官殺', isEstablished: true },
+                    breaks: [],
+                    supports: [],
+                    summary: '正官格（成格）'
+                };
+            }
+        },
         byoyakuCalculator: {
-            diagnose: () => {
+            diagnose: (input) => {
                 calls.byoyaku += 1;
                 return {
                     disease: { name: '比劫奪官', element: '木' },
-                    medicine: { name: '財星', element: '土', exists: true }
+                    medicine: { name: '財星', element: '土', exists: true },
+                    kishou: input?.kishouResult || null,
+                    keizen: input?.keizenResult
+                        ? { pillar: input.keizenResult.pillar, breaks: input.keizenResult.breaks, summary: input.keizenResult.summary }
+                        : null,
+                    meta: { version: 'byoyaku-2.0' }
                 };
             }
         },
@@ -84,11 +101,13 @@ test('AC-01 OFF時は optional calculator を一切呼ばない', () => {
     assert.strictEqual(calls.gouChuu, 0, 'GouChuu 非実行');
     assert.strictEqual(calls.strength, 0, 'Strength 非実行');
     assert.strictEqual(calls.kakkyoku, 0, 'Kakkyoku 非実行');
+    assert.strictEqual(calls.keizen, 0, 'Keizen 非実行');
     assert.strictEqual(calls.byoyaku, 0, 'Byoyaku 非実行');
     assert.strictEqual(calls.daiun, 0, 'DaiunHyouka 非実行');
     assert.strictEqual(result.byoyakuResult, null);
     assert.strictEqual(result.gouChuuResult, null);
     assert.strictEqual(result.kishouResult, null);
+    assert.strictEqual(result.keizenResult, null);
 });
 
 test('AC-02 ON時は optional calculator を各1回呼ぶ', () => {
@@ -99,10 +118,13 @@ test('AC-02 ON時は optional calculator を各1回呼ぶ', () => {
     assert.strictEqual(calls.gouChuu, 1);
     assert.strictEqual(calls.strength, 1);
     assert.strictEqual(calls.kakkyoku, 1);
+    assert.strictEqual(calls.keizen, 1, 'Keizen を Byoyaku より前に実行');
     assert.strictEqual(calls.byoyaku, 1);
     assert.strictEqual(calls.daiun, 1);
     assert.ok(result.byoyakuResult, 'byoyakuResult が返る');
     assert.ok(result.kishouResult, 'kishouResult が返る');
+    assert.ok(result.keizenResult, 'keizenResult が返る');
     assert.ok(result.gouChuuResult, '内部用 gouChuuResult は保持');
     assert.ok(result.byoyakuResult.kishou, 'byoyakuResult に kishou を添付');
+    assert.ok(result.byoyakuResult.keizen, 'byoyakuResult に keizen を添付');
 });

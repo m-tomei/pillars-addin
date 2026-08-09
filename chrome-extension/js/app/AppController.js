@@ -12,6 +12,7 @@ import { ByoyakuCalculator } from "../core/ByoyakuCalculator.js";
 import { DaiunHyoukaCalculator } from "../core/DaiunHyoukaCalculator.js";
 import { GouChuuCalculator } from "../core/GouChuuCalculator.js";
 import { KishouAssessor } from "../core/KishouAssessor.js";
+import { KeizenAnalyzer } from "../core/KeizenAnalyzer.js";
 import { FormRenderer } from "../ui/FormRenderer.js";
 import { ResultRenderer } from "../ui/ResultRenderer.js";
 import { ImageExporter } from "../ui/ImageExporter.js";
@@ -31,6 +32,7 @@ export class AppController {
         this.daiunHyoukaCalculator = null;
         this.gouChuuCalculator = null;
         this.kishouAssessor = null;
+        this.keizenAnalyzer = null;
         this.stemBranchData = null;
         this.kakkyokuRules = null;
 
@@ -82,6 +84,7 @@ export class AppController {
             this.byoyakuCalculator = new ByoyakuCalculator(this.kakkyokuRules);
             this.gouChuuCalculator = new GouChuuCalculator();
             this.kishouAssessor = new KishouAssessor();
+            this.keizenAnalyzer = new KeizenAnalyzer(this.kakkyokuRules);
             this.daiunHyoukaCalculator = new DaiunHyoukaCalculator(this.tsuuhenCalculator, this.gouChuuCalculator);
 
             // イベントリスナーのセットアップ
@@ -197,6 +200,7 @@ export class AppController {
                 gouChuuCalculator: this.gouChuuCalculator,
                 strengthAssessor: this.strengthAssessor,
                 kakkyokuCalculator: this.kakkyokuCalculator,
+                keizenAnalyzer: this.keizenAnalyzer,
                 byoyakuCalculator: this.byoyakuCalculator,
                 daiunHyoukaCalculator: this.daiunHyoukaCalculator
             }, {
@@ -212,6 +216,7 @@ export class AppController {
                 console.log("GouChuu analyzed:", optional.gouChuuResult);
                 console.log("Strength assessed:", optional.strengthResult);
                 console.log("Kakkyoku calculated:", optional.kakkyokuResult);
+                console.log("Keizen analyzed:", optional.keizenResult);
                 console.log("Byoyaku diagnosed:", optional.byoyakuResult);
                 console.log("Daiun evaluated:", optional.daiunEvaluations);
             }

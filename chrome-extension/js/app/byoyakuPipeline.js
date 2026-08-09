@@ -23,17 +23,18 @@ export function getByoyakuPipelinePlan(byoyakuEnabled) {
  * 病薬ON時のみ optional 計算機を実行する。
  * OFF時は各計算機を呼ばず null を返す（AC-01 spy 用）。
  *
- * 順序: Kishou → GouChuu → Strength → Kakkyoku → Byoyaku → DaiunHyouka
+ * 順序: Kishou → GouChuu → Strength → Kakkyoku → Keizen → Byoyaku → DaiunHyouka
  *
  * @param {object} deps
  * @param {object} deps.kishouAssessor
  * @param {object} deps.gouChuuCalculator
  * @param {object} deps.strengthAssessor
  * @param {object} deps.kakkyokuCalculator
+ * @param {object} deps.keizenAnalyzer
  * @param {object} deps.byoyakuCalculator
  * @param {object} deps.daiunHyoukaCalculator
  * @param {object} ctx
- * @returns {{ kishouResult: object|null, gouChuuResult: object|null, strengthResult: object|null, kakkyokuResult: object|null, byoyakuResult: object|null, daiunEvaluations: object|null }}
+ * @returns {{ kishouResult: object|null, gouChuuResult: object|null, strengthResult: object|null, kakkyokuResult: object|null, keizenResult: object|null, byoyakuResult: object|null, daiunEvaluations: object|null }}
  */
 export function runOptionalDiagnostics(deps, ctx) {
     const plan = getByoyakuPipelinePlan(ctx.byoyakuEnabled);
@@ -43,6 +44,7 @@ export function runOptionalDiagnostics(deps, ctx) {
             gouChuuResult: null,
             strengthResult: null,
             kakkyokuResult: null,
+            keizenResult: null,
             byoyakuResult: null,
             daiunEvaluations: null
         };
@@ -58,13 +60,18 @@ export function runOptionalDiagnostics(deps, ctx) {
     const kakkyokuResult = deps.kakkyokuCalculator.calculate(
         ctx.fortune, ctx.tsuuhenResults, strengthResult, gouChuuResult
     );
-    const byoyakuResult = deps.byoyakuCalculator.diagnose(
-        kakkyokuResult, strengthResult, ctx.fortune, ctx.tsuuhenResults, gouChuuResult
+    const keizenResult = deps.keizenAnalyzer.analyze(
+        kakkyokuResult, strengthResult, ctx.tsuuhenResults, ctx.fortune, gouChuuResult
     );
-    // 気象結果は後続の突合（T-03d）で利用。現状は結果に添付するのみ
-    if (byoyakuResult && !byoyakuResult.kishou) {
-        byoyakuResult.kishou = kishouResult;
-    }
+    const byoyakuResult = deps.byoyakuCalculator.diagnose({
+        kakkyokuResult,
+        strengthResult,
+        fortuneResult: ctx.fortune,
+        tsuuhenResult: ctx.tsuuhenResults,
+        gouChuuResult,
+        kishouResult,
+        keizenResult
+    });
     const daiunEvaluations = deps.daiunHyoukaCalculator.evaluate(
         ctx.greatFortuneCycles, byoyakuResult, ctx.fortune, strengthResult
     );
@@ -74,6 +81,7 @@ export function runOptionalDiagnostics(deps, ctx) {
         gouChuuResult,
         strengthResult,
         kakkyokuResult,
+        keizenResult,
         byoyakuResult,
         daiunEvaluations
     };
