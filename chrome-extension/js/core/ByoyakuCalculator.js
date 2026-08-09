@@ -28,6 +28,17 @@ const CONTROL_CYCLE = {
 // 五行リスト
 const ELEMENTS = ['木', '火', '土', '金', '水'];
 
+// 長養三方（R-01）。土は初版対象外
+const CHOUYOU_BRANCHES = {
+  木: ['寅', '卯', '辰'],
+  火: ['巳', '午', '未'],
+  金: ['申', '酉', '戌'],
+  水: ['亥', '子', '丑'],
+  土: []
+};
+
+const CONG_ZHONG_OU_RATIO = 0.40;
+
 // 十神 → 用神五行を得るための関係マッピング
 // 格局名から、その格局が「用いている」十神カテゴリを得る
 const KAKKYOKU_YOUSHIN_MAP = {
@@ -207,17 +218,29 @@ export class ByoyakuCalculator {
       strengthResult, kakkyokuResult, fourDiseaseResult, elementDist, dayElement
     );
 
+    const treatmentMode = fourMedicineResult.treatmentMode
+      ?? (fourDiseaseResult.type === '雕' ? '琢' : null);
+    const treatmentElements = fourMedicineResult.treatmentElements
+      || (treatmentMode === '琢' && fourMedicineResult.element
+        ? [fourMedicineResult.element]
+        : []);
+
     // ── 各診断ごとに薬の五行・所在を計算 ──
-    const diagnoses = specificDiagnoses.map(diag => {
+    let diagnoses = specificDiagnoses.map(diag => {
+      const diseaseElement = this._inferDiseaseElementFromTenGod(diag.diseaseTenGod, dayElement)
+        ?? fourDiseaseResult.diseaseElement
+        ?? null;
       const medicineElement = this._inferMedicineElement(diag.medicineTenGod, dayElement)
-        || fourMedicineResult.element;
+        || fourMedicineResult.element
+        || treatmentElements[0]
+        || null;
       const medicineLocation = this._findMedicineInChart(medicineElement, fortuneResult, transformedMap);
       return {
         role: 'primary',
         source: 'keizen',
         disease: {
           name: diag.diseaseName,
-          element: fourDiseaseResult.diseaseElement,
+          element: diseaseElement,
           tenGod: diag.diseaseTenGod,
           severity
         },
@@ -226,30 +249,51 @@ export class ByoyakuCalculator {
           element: medicineElement,
           tenGod: diag.medicineTenGod,
           exists: medicineLocation.exists,
-          location: medicineLocation.location
+          location: medicineLocation.location,
+          choukouAligned: false
         },
-        reason: diag.reason
+        reason: diag.reason,
+        fourDisease: fourDiseaseResult.type,
+        fourMedicine: fourMedicineResult.type,
+        treatmentMode
       };
     });
 
-    // 先頭要素で後方互換性を維持
-    const first = diagnoses[0];
+    // ── 調候 × 十神薬の突合（T-03d）──
+    diagnoses = diagnoses.map(diag => this._reconcileWithChoukou(diag, kishouResult));
+
+    // 気象が extreme かつ用神損傷が無いとき、気象診断を先頭へ
+    if (kishouResult?.isExtreme && (keizenResult.breaks || []).length === 0) {
+      diagnoses = [this._buildKishouDiagnosis(kishouResult), ...diagnoses];
+    } else if (kishouResult?.isExtreme) {
+      diagnoses = [...diagnoses, this._buildKishouDiagnosis(kishouResult)];
+    }
+
+    const balance = this._assessBalance(
+      diagnoses, fortuneResult, dayElement, fourDiseaseResult, keizenResult, kishouResult
+    );
+    const kiki = this._buildKiki(diagnoses);
+
+    // 代表診断: 用神損傷の primary を優先（表示先頭と分離）
+    const representative = diagnoses.find(d => d.source === 'keizen' && d.role === 'primary')
+      || diagnoses[0];
+    const choukouAligned = Boolean(representative?.medicine?.choukouAligned);
 
     return {
-      disease: first.disease,
-      medicine: first.medicine,
-      summary: first.reason,
+      disease: representative.disease,
+      medicine: representative.medicine,
+      summary: representative.reason,
       fourDisease: fourDiseaseResult.type,
       fourMedicine: fourMedicineResult.type,
       fourDiseaseElement: fourDiseaseResult.diseaseElement ?? null,
       fourMedicineElement: fourMedicineResult.element ?? null,
-      treatmentMode: fourDiseaseResult.type === '雕' ? '琢' : null,
-      treatmentElements: fourDiseaseResult.type === '雕' && fourMedicineResult.element
-        ? [fourMedicineResult.element]
-        : [],
+      treatmentMode,
+      treatmentElements,
       diagnoses,
       heaviestElement,
       heaviestRatio,
+      balance,
+      kiki,
       kishou: kishouResult,
       keizen: {
         pillar: keizenResult.pillar,
@@ -258,7 +302,7 @@ export class ByoyakuCalculator {
       },
       meta: {
         version: 'byoyaku-2.0',
-        choukouAligned: false,
+        choukouAligned,
         viaLegacyAdapter: Boolean(input._viaLegacyAdapter)
       }
     };
@@ -269,39 +313,49 @@ export class ByoyakuCalculator {
   // ═══════════════════════════════════════════════════════
 
   /**
-   * 命式全体の五行分布を加重計算する
-   * 天干=1.0, 蔵干主気=0.7, 蔵干中気=0.5, 蔵干余気=0.3
+   * 命式全体の五行分布を加重計算する（BYO-DD-02 / R-02）
+   *
+   * 年干・時干=1.0、月干=1.2、日干は除外。
+   * 蔵干=主0.7/中0.5/余0.3、月支主気のみ×2.0（寄与1.4）。
+   * 合化成功支は化後五行を主気相当で加算し、月支なら同じ×2.0。
    * @private
    */
   _calcElementDistribution(fortuneResult, transformedMap = null) {
     const dist = { '木': 0, '火': 0, '土': 0, '金': 0, '水': 0 };
-    const pillars = [
-      fortuneResult.yearPillar,
-      fortuneResult.monthPillar,
-      fortuneResult.dayPillar,
-      fortuneResult.hourPillar
+    const pillarSpecs = [
+      { key: 'yearPillar', stemWeight: 1.0, monthMainBoost: 1.0 },
+      { key: 'monthPillar', stemWeight: 1.2, monthMainBoost: 2.0 },
+      { key: 'dayPillar', stemWeight: 0, monthMainBoost: 1.0 },
+      { key: 'hourPillar', stemWeight: 1.0, monthMainBoost: 1.0 }
     ];
 
-    for (let i = 0; i < pillars.length; i++) {
-      const pillar = pillars[i];
+    for (let i = 0; i < pillarSpecs.length; i++) {
+      const { key, stemWeight, monthMainBoost } = pillarSpecs[i];
+      const pillar = fortuneResult[key];
       if (!pillar) continue;
-      // 天干
-      const stemEl = STEM_ELEMENTS[pillar.stem];
-      if (stemEl) dist[stemEl] += 1.0;
 
-      // 合化成功した地支は化後の五行で計算（主気相当の重み）
+      const stemEl = STEM_ELEMENTS[pillar.stem];
+      if (stemEl && stemWeight > 0) dist[stemEl] += stemWeight;
+
+      // 合化成功した地支は化後の五行を主気相当で計算
       if (transformedMap && transformedMap.has(i)) {
-        dist[transformedMap.get(i)] += 0.7;
+        dist[transformedMap.get(i)] += 0.7 * monthMainBoost;
         continue;
       }
 
-      // 蔵干（主気, 中気, 余気の順に重みを下げる）
-      const weights = [0.7, 0.5, 0.3];
       const hidden = pillar.hiddenStems || [];
-      for (let j = 0; j < hidden.length; j++) {
-        const el = STEM_ELEMENTS[hidden[j]];
-        if (el) dist[el] += (weights[j] || 0.3);
+      if (hidden.length > 0) {
+        const weights = [0.7 * monthMainBoost, 0.5, 0.3];
+        for (let j = 0; j < hidden.length; j++) {
+          const el = STEM_ELEMENTS[hidden[j]];
+          if (el) dist[el] += (weights[j] ?? 0.3);
+        }
+        continue;
       }
+
+      // 蔵干省略時は地支本気を主気として扱う
+      const branchEl = BRANCH_ELEMENTS[pillar.branch];
+      if (branchEl) dist[branchEl] += 0.7 * monthMainBoost;
     }
     return dist;
   }
@@ -329,11 +383,13 @@ export class ByoyakuCalculator {
   /**
    * 四病の分類
    *
-   * 判定優先順位:
-   *   1. 雕 — 用神に対する対立要素が命式中に全くない
-   *   2. 枯 — 用神の五行が弱いが蔵干に根がある（復活可能）
-   *   3. 旺 — ある五行が極端に強い（従重者論で突出）
-   *   4. 弱 — 日主または用神が不足
+   * 判定優先順位（R-01 / BYO-DD-05）:
+   *   1. 特殊格局 → 旺/弱
+   *   2. 旺（從重比率 ≥ 40%）
+   *   3. 雕
+   *   4. 枯
+   *   5. 旺（身旺スコア）
+   *   6. 弱（デフォルト）
    *
    * @private
    */
@@ -345,23 +401,27 @@ export class ByoyakuCalculator {
       return this._classifySpecialKakkyoku(strengthResult, dayElement, elementDist);
     }
 
-    // ── 1. 雕チェック ──
+    // ── 2. 從重40%は雕より先に旺 ──
+    const ouByRatio = this._checkOuByRatio(elementDist);
+    if (ouByRatio) return ouByRatio;
+
+    // ── 3. 雕チェック ──
     const choResult = this._checkCho(
       youshinCategory, tsuuhenList, dayElement, elementDist, fortuneResult, transformedMap
     );
     if (choResult) return choResult;
 
-    // ── 2. 枯チェック ──
+    // ── 4. 枯チェック ──
     const koResult = this._checkKo(
       youshinCategory, dayElement, elementDist, fortuneResult, transformedMap
     );
     if (koResult) return koResult;
 
-    // ── 3. 旺チェック ──
-    const ouResult = this._checkOu(dayElement, elementDist, strengthResult);
-    if (ouResult) return ouResult;
+    // ── 5. 身旺スコアによる旺 ──
+    const ouByStrength = this._checkOuByStrength(dayElement, strengthResult);
+    if (ouByStrength) return ouByStrength;
 
-    // ── 4. 弱（デフォルト） ──
+    // ── 6. 弱（デフォルト） ──
     return this._classifyJaku(dayElement, elementDist, strengthResult, youshinCategory);
   }
 
@@ -392,11 +452,11 @@ export class ByoyakuCalculator {
     const hasOppositionInHidden = this._hasElementInHiddenStems(oppositionElement, fortuneResult, transformedMap);
 
     if (!hasOpposition && !hasOppositionInHidden) {
-      // 雕の病: 対立要素が皆無
-      const youshinElement = this._getCategoryElement(youshinCategory, dayElement);
+      // 雕: 害神五行は存在しない（fourDiseaseElement=null）。磨く側は treatmentElements
       return {
         type: '雕',
-        diseaseElement: youshinElement,
+        diseaseElement: null,
+        treatmentElements: oppositionElement ? [oppositionElement] : [],
         description: this._getChoDescription(youshinCategory),
         heaviestElement: null
       };
@@ -450,18 +510,13 @@ export class ByoyakuCalculator {
   }
 
   /**
-   * 旺（過旺）のチェック
-   *
-   * 命式中のある五行が極端に強い
-   * 従重者論: 最も重い五行が全体の40%以上を占める場合
-   *
+   * 從重比率による旺（≥40%）
    * @private
    */
-  _checkOu(dayElement, elementDist, strengthResult) {
+  _checkOuByRatio(elementDist) {
     const total = Object.values(elementDist).reduce((a, b) => a + b, 0);
     if (total === 0) return null;
 
-    // 各五行の比率を計算し、突出したものを探す
     let maxEl = null;
     let maxRatio = 0;
     for (const el of ELEMENTS) {
@@ -472,8 +527,7 @@ export class ByoyakuCalculator {
       }
     }
 
-    // 40%以上を占める五行があれば「旺の病」
-    if (maxRatio >= 0.40) {
+    if (maxRatio >= CONG_ZHONG_OU_RATIO) {
       return {
         type: '旺',
         diseaseElement: maxEl,
@@ -481,8 +535,14 @@ export class ByoyakuCalculator {
         heaviestElement: maxEl
       };
     }
+    return null;
+  }
 
-    // 身旺（スコア高い）でも旺と判定
+  /**
+   * 身旺スコアによる旺
+   * @private
+   */
+  _checkOuByStrength(dayElement, strengthResult) {
     if (strengthResult.strength === 'strong' && strengthResult.score >= 4) {
       return {
         type: '旺',
@@ -491,7 +551,6 @@ export class ByoyakuCalculator {
         heaviestElement: dayElement
       };
     }
-
     return null;
   }
 
@@ -550,67 +609,74 @@ export class ByoyakuCalculator {
   // ═══════════════════════════════════════════════════════
 
   /**
-   * 四薬を処方する
+   * 四薬を処方する（R-01 v1.1）
    *
-   * - 旺 → 損（過剰な五行を剋で制す）
-   * - 弱 → 益（不足を生・同類で補う）
-   * - 枯 → 生/長（根元を養い復活させる）
-   * - 雕 → 対立要素を導入して磨く（損に近いが性質が異なる）
+   * - 旺＋長養 → 長（克）。それ以外の旺 → 損
+   * - 弱 → 益
+   * - 枯 → 生（滋養）
+   * - 雕 → fourMedicine=null、treatmentMode=琢
    *
    * @private
    */
   _classifyFourMedicine(fourDiseaseResult, dayElement, elementDist, fortuneResult, youshinCategory) {
     const diseaseType = fourDiseaseResult.type;
     const diseaseElement = fourDiseaseResult.diseaseElement;
+    const monthBranch = fortuneResult?.monthPillar?.branch || null;
 
     switch (diseaseType) {
       case '旺': {
-        // 損: 過剰な五行を剋する五行が薬
         const controllingEl = this._getElementThatControls(diseaseElement);
-        // 特例: 日主が旺で洩気の方が有効な場合もある
-        // 食傷で洩らすか、官殺で制すかは具体的ルールに委ねる
-        return { type: '損', element: controllingEl };
+        const stage = this._resolveElementStage(diseaseElement, monthBranch);
+        if (stage === '長養') {
+          return { type: '長', element: controllingEl, stage };
+        }
+        return { type: '損', element: controllingEl, stage };
       }
 
       case '弱': {
-        // 益: 弱い五行を生じる五行 or 同類で補う
         if (diseaseElement === dayElement) {
-          // 日主が弱い → 印星（生じる五行）で補う
           const generatingEl = this._getElementThatGenerates(dayElement);
           return { type: '益', element: generatingEl };
-        } else {
-          // 用神が弱い → 用神を生じる五行 or 用神の同類
-          const generatingEl = this._getElementThatGenerates(diseaseElement);
-          return { type: '益', element: generatingEl || diseaseElement };
         }
+        const generatingEl = this._getElementThatGenerates(diseaseElement);
+        return { type: '益', element: generatingEl || diseaseElement };
       }
 
       case '枯': {
-        // 生/長: 枯渇した五行の根元を養う
-        // 用神を生じる五行が「生の薬」
-        // 蔵干に根があるので通関で気を回す
         const generatingEl = this._getElementThatGenerates(diseaseElement);
-        // 長生・沐浴の段階 → 生, 冠帯以降 → 長
-        // 簡易判定: 根はあるがまだ弱い → 「生」
         return { type: '生', element: generatingEl };
       }
 
       case '雕': {
-        // 対立要素を導入して磨く
-        // 用神の対立十神カテゴリの五行が薬
         const oppositionCategory = youshinCategory ? OPPOSITION_MAP[youshinCategory] : null;
-        if (oppositionCategory) {
-          const oppositionEl = this._getCategoryElement(oppositionCategory, dayElement);
-          return { type: '損', element: oppositionEl };
-        }
-        // フォールバック
-        const controllingEl = this._getElementThatControls(diseaseElement);
-        return { type: '損', element: controllingEl };
+        const oppositionEl = oppositionCategory
+          ? this._getCategoryElement(oppositionCategory, dayElement)
+          : null;
+        const treatmentElements = fourDiseaseResult.treatmentElements?.length
+          ? fourDiseaseResult.treatmentElements
+          : (oppositionEl ? [oppositionEl] : []);
+        return {
+          type: null,
+          element: null,
+          treatmentMode: '琢',
+          treatmentElements
+        };
       }
 
       default:
         return { type: '益', element: this._getElementThatGenerates(dayElement) };
     }
+  }
+
+  /**
+   * 対象五行の勢い段階（長養 / その他）。土は初版対象外。
+   * @private
+   */
+  _resolveElementStage(element, monthBranch) {
+    if (!element || !monthBranch || element === '土') return 'その他';
+    const branches = CHOUYOU_BRANCHES[element] || [];
+    if (branches.includes(monthBranch)) return '長養';
+    return 'その他';
   }
 
   // ═══════════════════════════════════════════════════════
@@ -970,6 +1036,214 @@ export class ByoyakuCalculator {
       default:
         return null;
     }
+  }
+
+  /** 病の十神から五行を逆算する */
+  _inferDiseaseElementFromTenGod(diseaseTenGod, dayElement) {
+    return this._inferMedicineElement(diseaseTenGod, dayElement);
+  }
+
+  /**
+   * 十神薬と調候の突合（T-03d）
+   * @private
+   */
+  _reconcileWithChoukou(diag, kishouResult) {
+    const choukou = kishouResult?.choukou;
+    if (!choukou || choukou.direction === 'なし') {
+      return diag;
+    }
+
+    const choukouEls = choukou.primaryElements || [];
+    const medEl = diag.medicine?.element;
+    const aligned = Boolean(medEl && choukouEls.includes(medEl));
+
+    const next = {
+      ...diag,
+      medicine: {
+        ...diag.medicine,
+        choukouAligned: aligned
+      }
+    };
+
+    if (!aligned && choukouEls.length > 0) {
+      next.medicineSecondary = {
+        name: `調候（${choukou.direction}）`,
+        element: choukouEls[0],
+        elements: choukouEls,
+        tenGod: null,
+        exists: false,
+        location: null,
+        choukouAligned: true
+      };
+      next.reason = `${diag.reason}（主軸の薬と調候を併記）`;
+    } else if (aligned) {
+      next.reason = `${diag.reason}（格局薬と調候が一致）`;
+    }
+
+    return next;
+  }
+
+  /**
+   * 気象診断アイテムを生成
+   * @private
+   */
+  _buildKishouDiagnosis(kishouResult) {
+    const direction = kishouResult.choukou?.direction || 'なし';
+    const elements = kishouResult.choukou?.primaryElements || [];
+    return {
+      role: 'secondary',
+      source: 'kishou',
+      disease: {
+        name: `気象偏枯（${kishouResult.temperature}/${kishouResult.humidity}）`,
+        element: null,
+        causeElements: kishouResult.causeElements || [],
+        deficientElements: kishouResult.deficientElements || elements,
+        tenGod: null,
+        severity: kishouResult.severity || 'moderate'
+      },
+      medicine: {
+        name: `調候（${direction}）`,
+        element: elements[0] || null,
+        elements,
+        tenGod: null,
+        exists: false,
+        location: null,
+        choukouAligned: true
+      },
+      reason: kishouResult.summary || '気象の偏りを調候で整える',
+      fourDisease: null,
+      fourMedicine: null,
+      treatmentMode: null
+    };
+  }
+
+  /**
+   * 病薬バランス（0-3）
+   * @private
+   */
+  _assessBalance(diagnoses, fortuneResult, dayElement, fourDiseaseResult, keizenResult, kishouResult) {
+    const primary = diagnoses.find(d => d.source === 'keizen') || diagnoses[0];
+    if (!primary) {
+      return {
+        label: '病なし薬なし',
+        diseaseScore: 0,
+        medicineScore: 0,
+        reading: '目立った病薬なし'
+      };
+    }
+
+    const noBreaks = (keizenResult?.breaks || []).length === 0;
+    const mildKishou = !kishouResult?.isExtreme;
+    if (
+      (fourDiseaseResult.type === '雕' || noBreaks) &&
+      mildKishou &&
+      fourDiseaseResult.type !== '旺' &&
+      fourDiseaseResult.type !== '弱' &&
+      fourDiseaseResult.type !== '枯'
+    ) {
+      // 雕のみ・気象も穏やか → 病なし寄り
+      if (fourDiseaseResult.type === '雕' && noBreaks) {
+        return {
+          label: '病なし薬なし',
+          diseaseScore: 0,
+          medicineScore: 0,
+          reading: '用神は純だが、当面の破は軽い'
+        };
+      }
+    }
+
+    let diseaseScore = 0;
+    const sev = primary.disease?.severity;
+    if (sev === 'severe') diseaseScore += 2;
+    else if (sev === 'moderate') diseaseScore += 1;
+
+    const diseaseEl = primary.disease?.element;
+    const monthBranchEl = BRANCH_ELEMENTS[fortuneResult.monthPillar?.branch];
+    if (diseaseEl && diseaseEl === monthBranchEl) diseaseScore += 1;
+
+    const stems = [
+      fortuneResult.yearPillar?.stem,
+      fortuneResult.monthPillar?.stem,
+      fortuneResult.hourPillar?.stem
+    ].filter(Boolean);
+    if (diseaseEl) {
+      const stemHits = stems.filter(s => STEM_ELEMENTS[s] === diseaseEl).length;
+      if (stemHits >= 2) diseaseScore += 1;
+      if (this._hasElementInHiddenStems(diseaseEl, fortuneResult)) diseaseScore += 1;
+    }
+    diseaseScore = Math.min(3, diseaseScore);
+
+    let medicineScore = 0;
+    const med = primary.medicine || {};
+    if (med.exists && med.location && String(med.location).includes('干')) medicineScore += 2;
+    else if (med.exists) medicineScore += 1;
+    if (med.element && med.element === monthBranchEl) medicineScore += 1;
+    if (med.choukouAligned) medicineScore += 1;
+    medicineScore = Math.min(3, medicineScore);
+
+    let label;
+    if (diseaseScore >= 2 && medicineScore >= 2) label = '病重薬重';
+    else if (diseaseScore >= 2 && medicineScore <= 1) label = '病重薬軽';
+    else if (diseaseScore <= 1 && medicineScore >= 2) label = '病軽薬重';
+    else label = '病軽薬軽';
+
+    return {
+      label,
+      diseaseScore,
+      medicineScore,
+      reading: `病力${diseaseScore}/薬力${medicineScore}（${label}）`
+    };
+  }
+
+  /**
+   * 喜忌ラベル
+   * @private
+   */
+  _buildKiki(diagnoses) {
+    const ki = [];
+    const ji = [];
+    const seenKi = new Set();
+    const seenJi = new Set();
+
+    for (const diag of diagnoses) {
+      if (diag.medicine?.element || diag.medicine?.tenGod) {
+        const key = `${diag.medicine.tenGod || ''}:${diag.medicine.element || ''}`;
+        if (!seenKi.has(key)) {
+          seenKi.add(key);
+          ki.push({
+            label: diag.medicine.name,
+            element: diag.medicine.element || undefined,
+            tenGod: diag.medicine.tenGod || undefined
+          });
+        }
+      }
+      if (diag.medicineSecondary?.elements) {
+        for (const el of diag.medicineSecondary.elements) {
+          const key = `choukou:${el}`;
+          if (!seenKi.has(key)) {
+            seenKi.add(key);
+            ki.push({ label: diag.medicineSecondary.name, element: el });
+          }
+        }
+      }
+      if (diag.disease?.element || diag.disease?.tenGod) {
+        const key = `${diag.disease.tenGod || ''}:${diag.disease.element || ''}`;
+        if (!seenJi.has(key)) {
+          seenJi.add(key);
+          ji.push({
+            label: diag.disease.name,
+            element: diag.disease.element || undefined,
+            tenGod: diag.disease.tenGod || undefined
+          });
+        }
+      }
+    }
+
+    return {
+      ki,
+      ji,
+      note: '薬側を喜、病側を忌とする（役割ラベル）'
+    };
   }
 }
 
