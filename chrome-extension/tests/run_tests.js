@@ -22,9 +22,9 @@ global.assert = {
     ok: (value, message) => {
         if (!value) throw new Error(`${message || ''} Expected truthy value`);
     },
-    throws: async (block, errorMatch, message) => {
+    throws: (block, errorMatch, message) => {
         try {
-            await block();
+            block();
         } catch (e) {
             if (errorMatch) {
                 if (typeof errorMatch === 'string' && !e.message.includes(errorMatch)) {

@@ -58,13 +58,20 @@ export class DaiunHyoukaCalculator {
 
     const dayStem = fortuneResult.dayPillar.stem;
 
-    // 薬・病の五行を収集
-    const medicineElements = [...new Set(
-      byoyakuResult.diagnoses
-        .map(d => d.medicine.element)
-        .filter(Boolean)
-    )];
-    const diseaseElement = byoyakuResult.diagnoses[0]?.disease.element || null;
+    // 後方互換APIの代表診断を正とする。表示先頭は気象診断の場合があるため、
+    // diagnoses[0] から病五行を取らない（BYO-DD-06 / AC-05）。
+    const primaryDiagnosis = byoyakuResult.diagnoses
+      ?.find(d => d.role === 'primary') || byoyakuResult.diagnoses?.[0] || null;
+    const medicineElement = byoyakuResult.medicine
+      ? byoyakuResult.medicine.element
+      : primaryDiagnosis?.medicine?.element;
+    const diseaseElement = byoyakuResult.disease
+      ? byoyakuResult.disease.element
+      : primaryDiagnosis?.disease?.element;
+    const medicineElements = medicineElement ? [medicineElement] : [];
+
+    // 代表病・代表薬とも五行が無ければ吉凶評価を行わない。
+    if (!diseaseElement && medicineElements.length === 0) return [];
 
     return cycles.map(cycle => {
       const stemElement = STEM_ELEMENTS[cycle.stem];
