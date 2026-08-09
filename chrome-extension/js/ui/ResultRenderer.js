@@ -12,7 +12,6 @@ export class ResultRenderer {
     this.elements.fortuneResult = document.getElementById("fortune-result");
     this.elements.kakkyokuByoyakuSection = document.getElementById("kakkyoku-byoyaku-section");
     this.elements.kakkyokuByoyakuResult = document.getElementById("kakkyoku-byoyaku-result");
-    this.elements.kakkyokuToggle = document.getElementById("kakkyoku-toggle");
     this.elements.gouChuuSection = document.getElementById("gouchuu-section");
     this.elements.gouChuuResult = document.getElementById("gouchuu-result");
     this.elements.gouChuuToggle = document.getElementById("gouchuu-toggle");
@@ -21,11 +20,7 @@ export class ResultRenderer {
     this.elements.greatFortuneToggle = document.getElementById("great-fortune-toggle");
     this.elements.savePngBtn = document.getElementById("save-png-btn");
 
-    if (this.elements.kakkyokuToggle) {
-      this.elements.kakkyokuToggle.addEventListener("change", () => {
-        this._toggleKakkyokuByoyaku();
-      });
-    }
+    // 旧 #kakkyoku-toggle は計算前オプションへ置換済み（T-05）
 
     if (this.elements.gouChuuToggle) {
       this.elements.gouChuuToggle.addEventListener("change", () => {
@@ -45,18 +40,19 @@ export class ResultRenderer {
    */
   showResults(fortune, juuniunResults, tsuuhenResults, greatFortuneCycles, year, kakkyokuResult, byoyakuResult, strengthResult, daiunEvaluations = null, gouChuuResult = null) {
     this.renderFortuneTable(fortune, juuniunResults, tsuuhenResults);
+
     if (kakkyokuResult && byoyakuResult && strengthResult) {
       this.renderKakkyokuByoyaku(kakkyokuResult, byoyakuResult, strengthResult);
       if (this.elements.kakkyokuByoyakuSection) {
         this.elements.kakkyokuByoyakuSection.style.display = "block";
       }
+    } else {
+      this._hideByoyakuSection();
     }
-    if (gouChuuResult) {
-      this.renderGouChuu(gouChuuResult);
-      if (this.elements.gouChuuSection) {
-        this.elements.gouChuuSection.style.display = "block";
-      }
-    }
+
+    // D-02: 合冲は内部計算のみ。UIには出さない（引数は互換のため残す）
+    this._hideGouChuuSection();
+
     this.renderGreatFortune(greatFortuneCycles, year, daiunEvaluations);
     if (this.elements.greatFortuneSection) {
       this.elements.greatFortuneSection.style.display = "block";
@@ -89,13 +85,29 @@ export class ResultRenderer {
   }
 
   /**
-   * 格局・病薬セクションの表示/非表示を切り替える
+   * 病薬セクションを消して非表示にする
    * @private
    */
-  _toggleKakkyokuByoyaku() {
-    if (!this.elements.kakkyokuByoyakuResult) return;
-    const isVisible = this.elements.kakkyokuToggle.checked;
-    this.elements.kakkyokuByoyakuResult.style.display = isVisible ? "block" : "none";
+  _hideByoyakuSection() {
+    if (this.elements.kakkyokuByoyakuResult) {
+      this.elements.kakkyokuByoyakuResult.innerHTML = "";
+    }
+    if (this.elements.kakkyokuByoyakuSection) {
+      this.elements.kakkyokuByoyakuSection.style.display = "none";
+    }
+  }
+
+  /**
+   * 合冲セクションを消して非表示にする（D-02）
+   * @private
+   */
+  _hideGouChuuSection() {
+    if (this.elements.gouChuuResult) {
+      this.elements.gouChuuResult.innerHTML = "";
+    }
+    if (this.elements.gouChuuSection) {
+      this.elements.gouChuuSection.style.display = "none";
+    }
   }
 
   /**

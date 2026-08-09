@@ -325,3 +325,84 @@ test('ByoyakuCalculator - 結果構造の検証', () => {
     assert.ok(result.fourDisease, '四病分類がある');
     assert.ok(result.fourMedicine, '四薬分類がある');
 });
+
+test('ByoyakuCalculator - diagnose v2 object API', () => {
+    const kakkyokuResult = {
+        kakkyoku: '正官格',
+        category: 'regular',
+        categoryLabel: '正格',
+        isEstablished: true,
+        breakReason: null
+    };
+    const strengthResult = { strength: 'strong', score: 5 };
+    const fortuneResult = {
+        yearPillar:  { stem: '甲', branch: '寅', hiddenStems: ['甲', '丙', '戊'] },
+        monthPillar: { stem: '辛', branch: '酉', hiddenStems: ['辛'] },
+        dayPillar:   { stem: '甲', branch: '子', hiddenStems: ['癸'] },
+        hourPillar:  { stem: '甲', branch: '寅', hiddenStems: ['甲', '丙', '戊'] }
+    };
+    const tsuuhenResult = {
+        year:  { tsuuhen: '比肩', relationship: 'same' },
+        month: { tsuuhen: '正官', relationship: 'controlled' },
+        hour:  { tsuuhen: '比肩', relationship: 'same' }
+    };
+    const kishouResult = {
+        temperature: '涼',
+        humidity: '中',
+        clarity: '不明',
+        severity: 'mild',
+        choukou: { direction: '温める', primaryElements: ['火'], secondary: [] },
+        isExtreme: false,
+        summary: 'テスト気象'
+    };
+    const keizenResult = {
+        pillar: {
+            kakkyoku: '正官格',
+            youshinCategory: 'officer',
+            youshinLabel: '官殺',
+            youshinElement: '金',
+            isEstablished: true
+        },
+        breaks: [{ condition: '比劫多', name: '比劫奪官', severityHint: 'moderate' }],
+        supports: [],
+        summary: '比劫奪官'
+    };
+
+    const result = calculator.diagnose({
+        kakkyokuResult,
+        strengthResult,
+        fortuneResult,
+        tsuuhenResult,
+        kishouResult,
+        keizenResult
+    });
+
+    assert.strictEqual(result.meta.version, 'byoyaku-2.0');
+    assert.strictEqual(result.kishou.summary, 'テスト気象');
+    assert.strictEqual(result.keizen.pillar.youshinCategory, 'officer');
+    assert.ok(result.heaviestElement, 'heaviestElement がある');
+    assert.ok(typeof result.heaviestRatio === 'number');
+});
+
+test('ByoyakuCalculator - diagnose v2 は kishou/keizen 必須', () => {
+    const base = {
+        kakkyokuResult: { kakkyoku: '正官格', isEstablished: true },
+        strengthResult: { strength: 'strong', score: 5 },
+        fortuneResult: {
+            yearPillar:  { stem: '甲', branch: '寅', hiddenStems: ['甲'] },
+            monthPillar: { stem: '辛', branch: '酉', hiddenStems: ['辛'] },
+            dayPillar:   { stem: '甲', branch: '子', hiddenStems: ['癸'] },
+            hourPillar:  { stem: '甲', branch: '寅', hiddenStems: ['甲'] }
+        },
+        tsuuhenResult: { year: { tsuuhen: '比肩' }, month: { tsuuhen: '正官' }, hour: { tsuuhen: '比肩' } }
+    };
+
+    assert.throws(
+        () => calculator.diagnose({ ...base, keizenResult: { pillar: {}, breaks: [] } }),
+        'kishouResult は必須です'
+    );
+    assert.throws(
+        () => calculator.diagnose({ ...base, kishouResult: { clarity: '不明' } }),
+        'keizenResult は必須です'
+    );
+});

@@ -11,10 +11,13 @@ import { KakkyokuCalculator } from "../core/KakkyokuCalculator.js";
 import { ByoyakuCalculator } from "../core/ByoyakuCalculator.js";
 import { DaiunHyoukaCalculator } from "../core/DaiunHyoukaCalculator.js";
 import { GouChuuCalculator } from "../core/GouChuuCalculator.js";
+import { KishouAssessor } from "../core/KishouAssessor.js";
+import { KeizenAnalyzer } from "../core/KeizenAnalyzer.js";
 import { FormRenderer } from "../ui/FormRenderer.js";
 import { ResultRenderer } from "../ui/ResultRenderer.js";
 import { ImageExporter } from "../ui/ImageExporter.js";
 import { InputManager } from "./InputManager.js";
+import { getByoyakuPipelinePlan, runOptionalDiagnostics } from "./byoyakuPipeline.js";
 
 export class AppController {
     constructor() {
@@ -28,6 +31,8 @@ export class AppController {
         this.byoyakuCalculator = null;
         this.daiunHyoukaCalculator = null;
         this.gouChuuCalculator = null;
+        this.kishouAssessor = null;
+        this.keizenAnalyzer = null;
         this.stemBranchData = null;
         this.kakkyokuRules = null;
 
@@ -35,6 +40,9 @@ export class AppController {
         this.resultRenderer = null;
         this.inputManager = null;
 
+        /** @type {boolean} feature.byoyakuEnabled（セッション内。DOMと同期） */
+        this.byoyakuEnabled = false;
+        this.hasCalculatedResults = false;
         this.initialized = false;
     }
 
@@ -49,6 +57,7 @@ export class AppController {
             this.formRenderer = new FormRenderer();
             this.resultRenderer = new ResultRenderer();
             this.inputManager = new InputManager(this.formRenderer);
+            this.byoyakuEnabled = this.formRenderer.isByoyakuEnabled();
 
             // DataLoader初期化
             this.dataLoader = new DataLoader();
@@ -67,13 +76,15 @@ export class AppController {
 
             this.tsuuhenCalculator = new TsuuhenCalculator();
 
-            // 格局・病薬関連の初期化
+            // 格局・病薬関連の初期化（OFF時は実行しないがインスタンスは用意）
             this.stemBranchData = await this.dataLoader.loadStemBranchMaster();
             this.kakkyokuRules = await this.dataLoader.loadKakkyokuRules();
             this.strengthAssessor = new DayMasterStrengthAssessor(this.stemBranchData);
             this.kakkyokuCalculator = new KakkyokuCalculator(this.stemBranchData);
             this.byoyakuCalculator = new ByoyakuCalculator(this.kakkyokuRules);
             this.gouChuuCalculator = new GouChuuCalculator();
+            this.kishouAssessor = new KishouAssessor();
+            this.keizenAnalyzer = new KeizenAnalyzer(this.kakkyokuRules);
             this.daiunHyoukaCalculator = new DaiunHyoukaCalculator(this.tsuuhenCalculator, this.gouChuuCalculator);
 
             // イベントリスナーのセットアップ
@@ -103,8 +114,28 @@ export class AppController {
         // クリップボード貼り付け
         this.formRenderer.onPaste(this.handlePaste.bind(this));
 
+        // 病薬オプション変更（有効入力なら自動再計算）
+        this.formRenderer.onByoyakuOptionChange(this.handleByoyakuOptionChange.bind(this));
+
         // PNG保存
         this.resultRenderer.onSavePNG(this.handleSavePNG.bind(this));
+    }
+
+    /**
+     * 病薬オプション変更ハンドラ（D-04）
+     */
+    handleByoyakuOptionChange(enabled) {
+        this.byoyakuEnabled = Boolean(enabled);
+        if (!this.initialized || !this.hasCalculatedResults) return;
+
+        try {
+            this.inputManager.getFormInput();
+        } catch {
+            // 無効入力中はフラグのみ更新
+            return;
+        }
+
+        this.handleCalculate();
     }
 
     /**
@@ -117,8 +148,11 @@ export class AppController {
 
             // 入力取得と検証
             const inputData = this.inputManager.getFormInput();
+            this.byoyakuEnabled = Boolean(inputData.byoyakuEnabled);
+            const plan = getByoyakuPipelinePlan(this.byoyakuEnabled);
 
             console.log("Input data:", inputData);
+            console.log("Byoyaku pipeline plan:", plan);
 
             // 1. 命式計算
             const fortune = await this.fortuneCalculator.calculateFortune(
@@ -149,7 +183,7 @@ export class AppController {
             );
             console.log("Tsuuhen calculated:", tsuuhenResults);
 
-            // 4. 大運計算
+            // 4. 大運計算（基本）
             const greatFortuneCycles = this.greatFortuneCalculator.calculateCycles(
                 inputData.year,
                 inputData.month,
@@ -160,31 +194,32 @@ export class AppController {
             );
             console.log("Great fortune cycles calculated:", greatFortuneCycles);
 
-            // 4.5 合冲分析
-            const gouChuuResult = this.gouChuuCalculator.analyzeNatalChart(fortune);
-            console.log("GouChuu analyzed:", gouChuuResult);
+            // 5〜8. 病薬オプションON時のみ（OFF時は各計算機を呼ばない）
+            const optional = runOptionalDiagnostics({
+                kishouAssessor: this.kishouAssessor,
+                gouChuuCalculator: this.gouChuuCalculator,
+                strengthAssessor: this.strengthAssessor,
+                kakkyokuCalculator: this.kakkyokuCalculator,
+                keizenAnalyzer: this.keizenAnalyzer,
+                byoyakuCalculator: this.byoyakuCalculator,
+                daiunHyoukaCalculator: this.daiunHyoukaCalculator
+            }, {
+                byoyakuEnabled: this.byoyakuEnabled,
+                fortune,
+                juuniunResults,
+                tsuuhenResults,
+                greatFortuneCycles
+            });
 
-            // 5. 身旺弱判定
-            const strengthResult = this.strengthAssessor.assess(fortune, juuniunResults, gouChuuResult);
-            console.log("Strength assessed:", strengthResult);
-
-            // 6. 格局判定
-            const kakkyokuResult = this.kakkyokuCalculator.calculate(
-                fortune, tsuuhenResults, strengthResult, gouChuuResult
-            );
-            console.log("Kakkyoku calculated:", kakkyokuResult);
-
-            // 7. 病薬判定
-            const byoyakuResult = this.byoyakuCalculator.diagnose(
-                kakkyokuResult, strengthResult, fortune, tsuuhenResults, gouChuuResult
-            );
-            console.log("Byoyaku diagnosed:", byoyakuResult);
-
-            // 8. 大運吉凶判定
-            const daiunEvaluations = this.daiunHyoukaCalculator.evaluate(
-                greatFortuneCycles, byoyakuResult, fortune, strengthResult
-            );
-            console.log("Daiun evaluated:", daiunEvaluations);
+            if (this.byoyakuEnabled) {
+                console.log("Kishou assessed:", optional.kishouResult);
+                console.log("GouChuu analyzed:", optional.gouChuuResult);
+                console.log("Strength assessed:", optional.strengthResult);
+                console.log("Kakkyoku calculated:", optional.kakkyokuResult);
+                console.log("Keizen analyzed:", optional.keizenResult);
+                console.log("Byoyaku diagnosed:", optional.byoyakuResult);
+                console.log("Daiun evaluated:", optional.daiunEvaluations);
+            }
 
             // 結果表示
             this.resultRenderer.showResults(
@@ -193,12 +228,14 @@ export class AppController {
                 tsuuhenResults,
                 greatFortuneCycles,
                 inputData.year,
-                kakkyokuResult,
-                byoyakuResult,
-                strengthResult,
-                daiunEvaluations,
-                gouChuuResult
+                optional.kakkyokuResult,
+                optional.byoyakuResult,
+                optional.strengthResult,
+                optional.daiunEvaluations,
+                plan.showGouChuuSection ? optional.gouChuuResult : null
             );
+
+            this.hasCalculatedResults = true;
 
         } catch (error) {
             console.error("Calculation error:", error);
@@ -214,6 +251,8 @@ export class AppController {
     handleClear() {
         this.formRenderer.reset();
         this.resultRenderer.clear();
+        this.byoyakuEnabled = this.formRenderer.isByoyakuEnabled();
+        this.hasCalculatedResults = false;
     }
 
     /**

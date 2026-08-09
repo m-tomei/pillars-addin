@@ -66,15 +66,101 @@ export class ByoyakuCalculator {
   /**
    * 病薬を診断する
    *
-   * @param {Object} kakkyokuResult - KakkyokuCalculator.calculate()の戻り値
-   * @param {Object} strengthResult - DayMasterStrengthAssessor.assess()の戻り値
-   * @param {Object} fortuneResult  - FortuneCalculator.calculateFortune()の戻り値
-   * @param {Object} tsuuhenResult  - TsuuhenCalculator.calculateForPillars()の戻り値
+   * v2 正規API: diagnose({ kakkyokuResult, strengthResult, fortuneResult, tsuuhenResult, kishouResult, keizenResult, gouChuuResult? })
+   * 位置引数形式は移行用アダプタ（既存テスト互換）。新規コードでは object 形式を使う。
+   *
    * @returns {Object} 病薬診断結果
    */
-  diagnose(kakkyokuResult, strengthResult, fortuneResult, tsuuhenResult, gouChuuResult = null) {
+  diagnose(inputOrKakkyoku, strengthResult, fortuneResult, tsuuhenResult, gouChuuResult = null) {
+    if (this._isDiagnoseV2Input(inputOrKakkyoku)) {
+      return this._diagnoseV2(inputOrKakkyoku);
+    }
+
+    // 位置引数 → v2 アダプタ（kishou/keizen が無い場合はスタブ）
+    return this._diagnoseV2({
+      kakkyokuResult: inputOrKakkyoku,
+      strengthResult,
+      fortuneResult,
+      tsuuhenResult,
+      gouChuuResult,
+      kishouResult: this._stubKishouResult(),
+      keizenResult: this._stubKeizenResult(inputOrKakkyoku),
+      _viaLegacyAdapter: true
+    });
+  }
+
+  /**
+   * @private
+   */
+  _isDiagnoseV2Input(value) {
+    return Boolean(
+      value &&
+      typeof value === 'object' &&
+      value.kakkyokuResult &&
+      value.strengthResult &&
+      value.fortuneResult
+    );
+  }
+
+  /**
+   * @private
+   */
+  _stubKishouResult() {
+    return {
+      temperature: '中和',
+      humidity: '中',
+      clarity: '不明',
+      severity: 'mild',
+      choukou: { direction: 'なし', primaryElements: [], secondary: [] },
+      scores: {},
+      summary: '（互換アダプタ: 気象未評価）',
+      isExtreme: false,
+      causeElements: [],
+      deficientElements: []
+    };
+  }
+
+  /**
+   * @private
+   */
+  _stubKeizenResult(kakkyokuResult) {
+    return {
+      pillar: {
+        kakkyoku: kakkyokuResult?.kakkyoku || null,
+        youshinCategory: KAKKYOKU_YOUSHIN_MAP[kakkyokuResult?.kakkyoku] || null,
+        youshinLabel: '',
+        youshinElement: null,
+        isEstablished: Boolean(kakkyokuResult?.isEstablished)
+      },
+      breaks: [],
+      supports: [],
+      summary: '（互換アダプタ: 継善未評価）'
+    };
+  }
+
+  /**
+   * v2 正規診断
+   * @private
+   */
+  _diagnoseV2(input) {
+    const {
+      kakkyokuResult,
+      strengthResult,
+      fortuneResult,
+      tsuuhenResult,
+      gouChuuResult = null,
+      kishouResult,
+      keizenResult
+    } = input;
+
     if (!kakkyokuResult || !strengthResult || !fortuneResult) {
       throw new CalculationError('病薬判定に必要なデータが不足しています');
+    }
+    if (!kishouResult) {
+      throw new CalculationError('kishouResult は必須です');
+    }
+    if (!keizenResult) {
+      throw new CalculationError('keizenResult は必須です');
     }
 
     const dayStem = fortuneResult.dayPillar.stem;
@@ -88,12 +174,16 @@ export class ByoyakuCalculator {
 
     // ── Step 3: 従重者論 — 最も重い五行を特定 ──
     const heaviestElement = this._findHeaviestElement(elementDist, dayElement);
+    const total = ELEMENTS.reduce((s, el) => s + (elementDist[el] || 0), 0);
+    const heaviestRatio = total > 0 ? (elementDist[heaviestElement] || 0) / total : 0;
 
     // ── 天干の通変星を収集 ──
     const tsuuhenList = this._collectTsuuhen(tsuuhenResult);
 
-    // ── 用神カテゴリの特定 ──
-    const youshinCategory = KAKKYOKU_YOUSHIN_MAP[kakkyokuResult.kakkyoku] || null;
+    // ── 用神カテゴリの特定（継善の主軸を優先） ──
+    const youshinCategory = keizenResult.pillar?.youshinCategory
+      || KAKKYOKU_YOUSHIN_MAP[kakkyokuResult.kakkyoku]
+      || null;
 
     // ── Step 4: 四病分類 ──
     const fourDiseaseResult = this._classifyFourDisease(
@@ -123,6 +213,8 @@ export class ByoyakuCalculator {
         || fourMedicineResult.element;
       const medicineLocation = this._findMedicineInChart(medicineElement, fortuneResult, transformedMap);
       return {
+        role: 'primary',
+        source: 'keizen',
         disease: {
           name: diag.diseaseName,
           element: fourDiseaseResult.diseaseElement,
@@ -149,7 +241,26 @@ export class ByoyakuCalculator {
       summary: first.reason,
       fourDisease: fourDiseaseResult.type,
       fourMedicine: fourMedicineResult.type,
-      diagnoses
+      fourDiseaseElement: fourDiseaseResult.diseaseElement ?? null,
+      fourMedicineElement: fourMedicineResult.element ?? null,
+      treatmentMode: fourDiseaseResult.type === '雕' ? '琢' : null,
+      treatmentElements: fourDiseaseResult.type === '雕' && fourMedicineResult.element
+        ? [fourMedicineResult.element]
+        : [],
+      diagnoses,
+      heaviestElement,
+      heaviestRatio,
+      kishou: kishouResult,
+      keizen: {
+        pillar: keizenResult.pillar,
+        breaks: keizenResult.breaks || [],
+        summary: keizenResult.summary || ''
+      },
+      meta: {
+        version: 'byoyaku-2.0',
+        choukouAligned: false,
+        viaLegacyAdapter: Boolean(input._viaLegacyAdapter)
+      }
     };
   }
 
