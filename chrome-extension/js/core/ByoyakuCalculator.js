@@ -164,7 +164,8 @@ export class ByoyakuCalculator {
       keizenResult
     } = input;
 
-    if (!kakkyokuResult || !strengthResult || !fortuneResult) {
+    if (!kakkyokuResult || !strengthResult || !fortuneResult || !tsuuhenResult
+      || !fortuneResult.dayPillar?.stem) {
       throw new CalculationError('病薬判定に必要なデータが不足しています');
     }
     if (!kishouResult) {
@@ -208,10 +209,14 @@ export class ByoyakuCalculator {
     );
 
     // ── 格局固有ルールで具体的病薬名を取得（複数マッチ） ──
-    const specificDiagnoses = this._getSpecificDiagnosis(
-      kakkyokuResult, strengthResult, fortuneResult, tsuuhenResult,
-      dayElement, tsuuhenList, transformedMap
-    );
+    const specificDiagnoses = input._viaLegacyAdapter
+      ? this._getSpecificDiagnosis(
+        kakkyokuResult, strengthResult, fortuneResult, tsuuhenResult,
+        dayElement, tsuuhenList, transformedMap
+      )
+      : this._getSpecificDiagnosisFromBreaks(
+        kakkyokuResult, strengthResult, dayElement, keizenResult
+      );
 
     // ── 重症度判定 ──
     const severity = this._assessSeverity(
@@ -227,7 +232,8 @@ export class ByoyakuCalculator {
 
     // ── 各診断ごとに薬の五行・所在を計算 ──
     let diagnoses = specificDiagnoses.map(diag => {
-      const diseaseElement = this._inferDiseaseElementFromTenGod(diag.diseaseTenGod, dayElement)
+      const diseaseElement = diag.diseaseElement
+        ?? this._inferDiseaseElementFromTenGod(diag.diseaseTenGod, dayElement)
         ?? fourDiseaseResult.diseaseElement
         ?? null;
       const medicineElement = this._inferMedicineElement(diag.medicineTenGod, dayElement)
@@ -242,7 +248,7 @@ export class ByoyakuCalculator {
           name: diag.diseaseName,
           element: diseaseElement,
           tenGod: diag.diseaseTenGod,
-          severity
+          severity: diag.severityHint || severity
         },
         medicine: {
           name: diag.medicineName,
@@ -260,17 +266,26 @@ export class ByoyakuCalculator {
     });
 
     // ── 調候 × 十神薬の突合（T-03d）──
-    diagnoses = diagnoses.map(diag => this._reconcileWithChoukou(diag, kishouResult));
+    diagnoses = diagnoses.map(diag => this._reconcileWithChoukou(
+      diag, kishouResult, fortuneResult, transformedMap
+    ));
 
     // 気象が extreme かつ用神損傷が無いとき、気象診断を先頭へ
     if (kishouResult?.isExtreme && (keizenResult.breaks || []).length === 0) {
-      diagnoses = [this._buildKishouDiagnosis(kishouResult), ...diagnoses];
+      diagnoses = [
+        this._buildKishouDiagnosis(kishouResult, fortuneResult, transformedMap),
+        ...diagnoses
+      ];
     } else if (kishouResult?.isExtreme) {
-      diagnoses = [...diagnoses, this._buildKishouDiagnosis(kishouResult)];
+      diagnoses = [
+        ...diagnoses,
+        this._buildKishouDiagnosis(kishouResult, fortuneResult, transformedMap)
+      ];
     }
 
     const balance = this._assessBalance(
-      diagnoses, fortuneResult, dayElement, fourDiseaseResult, keizenResult, kishouResult
+      diagnoses, fortuneResult, dayElement, fourDiseaseResult, keizenResult,
+      kishouResult, transformedMap
     );
     const kiki = this._buildKiki(diagnoses);
 
@@ -729,6 +744,63 @@ export class ByoyakuCalculator {
   }
 
   /**
+   * KeizenAnalyzer の breaks を正として具体診断へ変換する（v2 API）。
+   * ルールに無い break も捨てず、BreakItem の内容から診断を生成する。
+   * @private
+   */
+  _getSpecificDiagnosisFromBreaks(kakkyokuResult, strengthResult, dayElement, keizenResult) {
+    const kakkyokuRule = this.rules[kakkyokuResult.kakkyoku];
+    const defaultStrengthKey = strengthResult.strength === 'weak' ? 'weak' : 'strong';
+    const breaks = keizenResult?.breaks || [];
+
+    if (breaks.length === 0) {
+      const defaultDisease = kakkyokuRule?.[defaultStrengthKey]?.defaultDisease;
+      if (!defaultDisease) {
+        return [this._createFallbackDiagnosis(strengthResult, dayElement)];
+      }
+      return [this._normalizeSpecificDiagnosis(defaultDisease, dayElement)];
+    }
+
+    return breaks.map(breakItem => {
+      const strengthKey = ['strong', 'weak'].includes(breakItem.strengthSide)
+        ? breakItem.strengthSide
+        : defaultStrengthKey;
+      const matchedRule = kakkyokuRule?.[strengthKey]?.diseases
+        ?.find(rule => rule.condition === breakItem.condition);
+
+      if (matchedRule) {
+        return this._normalizeSpecificDiagnosis(matchedRule, dayElement, breakItem);
+      }
+
+      const medicineName = breakItem.medicineHint || '薬方向を要検討';
+      return {
+        diseaseName: breakItem.name || breakItem.condition || '用神損傷',
+        medicineName,
+        reason: breakItem.reason || `${breakItem.name || '用神'}の損傷を確認`,
+        diseaseTenGod: breakItem.diseaseTenGod
+          ?? this._inferDiseaseTenGod(breakItem.name || '', dayElement),
+        diseaseElement: breakItem.diseaseElement ?? null,
+        medicineTenGod: this._inferMedicineTenGod(medicineName, dayElement),
+        severityHint: breakItem.severityHint || null
+      };
+    });
+  }
+
+  /** @private */
+  _normalizeSpecificDiagnosis(rule, dayElement, breakItem = null) {
+    return {
+      diseaseName: rule.disease,
+      medicineName: rule.medicine,
+      reason: rule.reason,
+      diseaseTenGod: breakItem?.diseaseTenGod
+        ?? this._inferDiseaseTenGod(rule.disease, dayElement),
+      diseaseElement: breakItem?.diseaseElement ?? null,
+      medicineTenGod: this._inferMedicineTenGod(rule.medicine, dayElement),
+      severityHint: breakItem?.severityHint || null
+    };
+  }
+
+  /**
    * ルールにない場合のフォールバック
    * @private
    */
@@ -1047,7 +1119,7 @@ export class ByoyakuCalculator {
    * 十神薬と調候の突合（T-03d）
    * @private
    */
-  _reconcileWithChoukou(diag, kishouResult) {
+  _reconcileWithChoukou(diag, kishouResult, fortuneResult, transformedMap = null) {
     const choukou = kishouResult?.choukou;
     if (!choukou || choukou.direction === 'なし') {
       return diag;
@@ -1066,13 +1138,16 @@ export class ByoyakuCalculator {
     };
 
     if (!aligned && choukouEls.length > 0) {
+      const location = this._findMedicineInChart(
+        choukouEls[0], fortuneResult, transformedMap
+      );
       next.medicineSecondary = {
         name: `調候（${choukou.direction}）`,
         element: choukouEls[0],
         elements: choukouEls,
         tenGod: null,
-        exists: false,
-        location: null,
+        exists: location.exists,
+        location: location.location,
         choukouAligned: true
       };
       next.reason = `${diag.reason}（主軸の薬と調候を併記）`;
@@ -1087,9 +1162,12 @@ export class ByoyakuCalculator {
    * 気象診断アイテムを生成
    * @private
    */
-  _buildKishouDiagnosis(kishouResult) {
+  _buildKishouDiagnosis(kishouResult, fortuneResult, transformedMap = null) {
     const direction = kishouResult.choukou?.direction || 'なし';
     const elements = kishouResult.choukou?.primaryElements || [];
+    const location = this._findMedicineInChart(
+      elements[0] || null, fortuneResult, transformedMap
+    );
     return {
       role: 'secondary',
       source: 'kishou',
@@ -1106,8 +1184,8 @@ export class ByoyakuCalculator {
         element: elements[0] || null,
         elements,
         tenGod: null,
-        exists: false,
-        location: null,
+        exists: location.exists,
+        location: location.location,
         choukouAligned: true
       },
       reason: kishouResult.summary || '気象の偏りを調候で整える',
@@ -1121,7 +1199,8 @@ export class ByoyakuCalculator {
    * 病薬バランス（0-3）
    * @private
    */
-  _assessBalance(diagnoses, fortuneResult, dayElement, fourDiseaseResult, keizenResult, kishouResult) {
+  _assessBalance(diagnoses, fortuneResult, dayElement, fourDiseaseResult,
+                 keizenResult, kishouResult, transformedMap = null) {
     const primary = diagnoses.find(d => d.source === 'keizen') || diagnoses[0];
     if (!primary) {
       return {
@@ -1169,7 +1248,9 @@ export class ByoyakuCalculator {
     if (diseaseEl) {
       const stemHits = stems.filter(s => STEM_ELEMENTS[s] === diseaseEl).length;
       if (stemHits >= 2) diseaseScore += 1;
-      if (this._hasElementInHiddenStems(diseaseEl, fortuneResult)) diseaseScore += 1;
+      if (this._hasElementInHiddenStems(diseaseEl, fortuneResult, transformedMap)) {
+        diseaseScore += 1;
+      }
     }
     diseaseScore = Math.min(3, diseaseScore);
 

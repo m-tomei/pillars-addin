@@ -189,3 +189,75 @@ test('DaiunHyoukaCalculator - 空サイクルで空配列', () => {
     const results = calculator.evaluate([], byoyakuResult, fortuneResult, strengthResult);
     assert.strictEqual(results.length, 0, '空配列');
 });
+
+test('AC-05 表示先頭が気象診断でも代表病薬を評価する', () => {
+    const cycles = [
+        { cycleNumber: 1, ageStart: 3, ageEnd: 12, stem: '甲', branch: '寅', jiaziIndex: 0 }
+    ];
+    const fortuneResult = {
+        dayPillar: { stem: '甲', branch: '子', hiddenStems: ['癸'] }
+    };
+    const representativeDisease = { name: '比劫旺', element: '木', tenGod: '比肩', severity: 'moderate' };
+    const representativeMedicine = { name: '官殺', element: '金', tenGod: '正官', exists: false, location: null };
+    const byoyakuResult = {
+        disease: representativeDisease,
+        medicine: representativeMedicine,
+        diagnoses: [
+            {
+                role: 'secondary', source: 'kishou',
+                disease: { name: '気象偏枯', element: null, tenGod: null, severity: 'severe' },
+                medicine: { name: '調候', element: '火', tenGod: null, exists: false, location: null }
+            },
+            {
+                role: 'primary', source: 'keizen',
+                disease: representativeDisease,
+                medicine: representativeMedicine
+            }
+        ]
+    };
+
+    const results = calculator.evaluate(
+        cycles, byoyakuResult, fortuneResult, { strength: 'strong', score: 5 }
+    );
+    assert.strictEqual(results.length, 1);
+    assert.ok(results[0].score < 0, '代表病の木を凶として評価');
+});
+
+test('AC-05 代表病または代表薬がnullなら非null側だけ評価する', () => {
+    const cycles = [
+        { cycleNumber: 1, ageStart: 3, ageEnd: 12, stem: '壬', branch: '子', jiaziIndex: 48 }
+    ];
+    const fortuneResult = {
+        dayPillar: { stem: '甲', branch: '子', hiddenStems: ['癸'] }
+    };
+    const byoyakuResult = {
+        disease: { name: '気象偏枯', element: null },
+        medicine: { name: '調候', element: '水' },
+        diagnoses: []
+    };
+
+    const results = calculator.evaluate(
+        cycles, byoyakuResult, fortuneResult, { strength: 'weak', score: 0 }
+    );
+    assert.strictEqual(results.length, 1);
+    assert.ok(results[0].score > 0, '薬の水だけで評価');
+});
+
+test('AC-05 代表病薬の五行が両方nullなら大運評価をスキップする', () => {
+    const cycles = [
+        { cycleNumber: 1, ageStart: 3, ageEnd: 12, stem: '壬', branch: '子', jiaziIndex: 48 }
+    ];
+    const byoyakuResult = {
+        disease: { name: '未確定', element: null },
+        medicine: { name: '未確定', element: null },
+        diagnoses: []
+    };
+    const fortuneResult = {
+        dayPillar: { stem: '甲', branch: '子', hiddenStems: ['癸'] }
+    };
+
+    const results = calculator.evaluate(
+        cycles, byoyakuResult, fortuneResult, { strength: 'neutral', score: 2 }
+    );
+    assert.deepStrictEqual(results, []);
+});
