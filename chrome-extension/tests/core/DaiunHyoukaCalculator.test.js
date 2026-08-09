@@ -261,3 +261,122 @@ test('AC-05 代表病薬の五行が両方nullなら大運評価をスキップ�
     );
     assert.deepStrictEqual(results, []);
 });
+
+test('T-03f/S-06 最終薬の金運は吉、降格した土運は吉にしない', () => {
+    // T-03f後の代表形: 最終薬=官殺(金)、降格=財星生殺(土)
+    const cycles = [
+        { cycleNumber: 1, ageStart: 3, ageEnd: 12, stem: '庚', branch: '申', jiaziIndex: 6 },
+        { cycleNumber: 2, ageStart: 13, ageEnd: 22, stem: '戊', branch: '辰', jiaziIndex: 4 }
+    ];
+    const fortuneResult = {
+        dayPillar: { stem: '甲', branch: '午', hiddenStems: ['丁', '己'] }
+    };
+    const byoyakuResult = {
+        disease: { name: '身旺殺軽', element: '木', tenGod: '比肩', severity: 'moderate' },
+        medicine: { name: '官殺', element: '金', tenGod: '正官', exists: true, location: '年干' },
+        fourDisease: '旺',
+        fourMedicine: '損',
+        fourDiseaseElement: '土',
+        heaviestElement: '土',
+        diagnoses: [
+            {
+                role: 'primary',
+                source: 'keizen',
+                disease: { name: '身旺殺軽', element: '木', tenGod: '比肩', severity: 'moderate' },
+                medicine: { name: '官殺', element: '金', tenGod: '正官', exists: true, location: '年干' },
+                medicineCaution: {
+                    name: '財星生殺',
+                    element: '土',
+                    tenGod: '正財',
+                    exists: true,
+                    location: '月干',
+                    reason: '五行偏重（土）と同気のため喜から除外'
+                }
+            }
+        ]
+    };
+
+    const results = calculator.evaluate(
+        cycles, byoyakuResult, fortuneResult, { strength: 'strong', score: 4 }
+    );
+    assert.strictEqual(results.length, 2);
+
+    const metal = results[0];
+    const earth = results[1];
+    assert.ok(metal.score > 0, `金運は正スコア: ${metal.score}`);
+    assert.ok(['大吉', '吉', '小吉'].includes(metal.judgment), `金運は吉寄り: ${metal.judgment}`);
+
+    // 土は降格薬。生薬加点も抑止し、吉判定にしない
+    assert.ok(earth.score < metal.score, `土運(${earth.score}) < 金運(${metal.score})`);
+    assert.ok(
+        !['大吉', '吉', '小吉'].includes(earth.judgment),
+        `降格土運を吉にしない: ${earth.judgment}`
+    );
+    assert.ok(earth.score <= 0.3, `土運は平以下: ${earth.score}`);
+});
+
+test('T-03f/S-06 diagnose結果を大運へ渡しても金吉・土非吉を維持する', async () => {
+    const { ByoyakuCalculator } = await import('../../js/core/ByoyakuCalculator.js');
+    const fs = await import('fs');
+    const path = await import('path');
+    const { fileURLToPath } = await import('url');
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const rules = JSON.parse(
+        fs.readFileSync(path.resolve(__dirname, '../../data/kakkyoku_rules.json'), 'utf8')
+    );
+    const byoyaku = new ByoyakuCalculator(rules);
+
+    const fortuneResult = {
+        yearPillar:  { stem: '庚', branch: '戌', hiddenStems: ['戊', '辛', '丁'] },
+        monthPillar: { stem: '己', branch: '卯', hiddenStems: ['乙'] },
+        dayPillar:   { stem: '甲', branch: '午', hiddenStems: ['丁', '己'] },
+        hourPillar:  { stem: '己', branch: '巳', hiddenStems: ['丙', '戊', '庚'] }
+    };
+    const byoyakuResult = byoyaku.diagnose({
+        kakkyokuResult: { kakkyoku: '偏官格', category: 'regular', isEstablished: true },
+        strengthResult: { strength: 'strong', score: 4 },
+        fortuneResult,
+        tsuuhenResult: {
+            year: { tsuuhen: '正官' },
+            month: { tsuuhen: '偏財' },
+            hour: { tsuuhen: '偏財' }
+        },
+        kishouResult: {
+            temperature: '熱',
+            humidity: '燥',
+            severity: 'moderate',
+            isExtreme: true,
+            choukou: { direction: '冷ます', primaryElements: ['水', '金'], secondary: [] },
+            summary: '気象は熱・燥寄り'
+        },
+        keizenResult: {
+            pillar: {
+                kakkyoku: '偏官格',
+                youshinCategory: 'officer',
+                youshinLabel: '官殺',
+                youshinElement: '金',
+                isEstablished: true
+            },
+            breaks: [],
+            summary: '偏官格（成格）'
+        }
+    });
+
+    assert.strictEqual(byoyakuResult.medicine.element, '金');
+    const caution = byoyakuResult.diagnoses.find(d => d.source === 'keizen')?.medicineCaution;
+    assert.strictEqual(caution?.element, '土');
+
+    const cycles = [
+        { cycleNumber: 1, ageStart: 3, ageEnd: 12, stem: '庚', branch: '申', jiaziIndex: 6 },
+        { cycleNumber: 2, ageStart: 13, ageEnd: 22, stem: '戊', branch: '辰', jiaziIndex: 4 }
+    ];
+    const results = calculator.evaluate(
+        cycles, byoyakuResult, fortuneResult, { strength: 'strong', score: 4 }
+    );
+
+    assert.ok(['大吉', '吉', '小吉'].includes(results[0].judgment), `金運: ${results[0].judgment}`);
+    assert.ok(
+        !['大吉', '吉', '小吉'].includes(results[1].judgment),
+        `土運を吉にしない: ${results[1].judgment}`
+    );
+});

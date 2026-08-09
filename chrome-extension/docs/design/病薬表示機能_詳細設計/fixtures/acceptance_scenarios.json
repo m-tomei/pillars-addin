@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "timezone": "Asia/Tokyo",
   "engine": "pillars-addin chrome-extension FortuneCalculator/ByoyakuCalculator",
   "fixedAt": "2026-08-09",
