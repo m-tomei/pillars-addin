@@ -53,6 +53,14 @@ export class ResultRenderer {
     // D-02: 合冲は内部計算のみ。UIには出さない（引数は互換のため残す）
     this._hideGouChuuSection();
 
+    const hasDaiunEvaluations = Array.isArray(daiunEvaluations) && daiunEvaluations.length > 0;
+    if (this.elements.greatFortuneToggle) {
+      this.elements.greatFortuneToggle.disabled = !hasDaiunEvaluations;
+      if (!hasDaiunEvaluations) {
+        this.elements.greatFortuneToggle.checked = false;
+      }
+    }
+
     this.renderGreatFortune(greatFortuneCycles, year, daiunEvaluations);
     if (this.elements.greatFortuneSection) {
       this.elements.greatFortuneSection.style.display = "block";
@@ -709,12 +717,15 @@ export class ResultRenderer {
               gouChuuHTML = `<div style="margin-top: 2px; font-size: 10px; color: #e67e22;">合冲: ${gcItems.join('、')}</div>`;
             }
           }
+          const detailClass = this.elements.greatFortuneToggle?.checked
+            ? 'cycle-detail visible'
+            : 'cycle-detail';
           judgmentHTML = `
             <div class="cycle-judgment" style="color: ${color};">
               ${evalData.judgment}
             </div>
             <div style="font-size: 10px; color: #888;">${evalData.stemTsuuhen}</div>
-            <div class="cycle-detail">
+            <div class="${detailClass}">
               ${evalData.gaitouType ? `<div style="margin-top: 2px;">${evalData.gaitouType}</div>` : ''}
               <div style="margin-top: 2px;">${evalData.reason}</div>
               ${gouChuuHTML}
