@@ -142,6 +142,42 @@ function samplePayload(overrides = {}) {
     };
 }
 
+function sampleGreatFortuneCycles() {
+    return [{ ageStart: 8, ageEnd: 17, stem: '庚', branch: '午' }];
+}
+
+function sampleDaiunEvaluations() {
+    return [{
+        judgment: '吉',
+        stemTsuuhen: '正官',
+        gaitouType: '用神到来',
+        reason: '薬の五行が来る'
+    }];
+}
+
+function sampleResultInputs() {
+    return {
+        fortune: {
+            yearPillar: { stem: '甲', branch: '子', hiddenStems: ['癸'] },
+            monthPillar: { stem: '丙', branch: '寅', hiddenStems: ['甲'] },
+            dayPillar: { stem: '戊', branch: '午', hiddenStems: ['丁'] },
+            hourPillar: null
+        },
+        juuniunResults: {
+            year: { juuniun: '長生' },
+            month: { juuniun: '沐浴' },
+            day: { juuniun: '帝旺' },
+            hour: null
+        },
+        tsuuhenResults: {
+            year: { tsuuhen: '偏印' },
+            month: { tsuuhen: '七殺' },
+            day: { tsuuhen: '日主' },
+            hour: null
+        }
+    };
+}
+
 test('ResultRenderer - 表示順は気象→主軸→身旺弱→四病四薬→病薬→バランス→喜忌', () => {
     createDomStub();
     const renderer = new ResultRenderer();
@@ -268,5 +304,51 @@ test('ResultRenderer - 病薬失敗時は病薬位置にエラーを表示する
     assert.ok(
         nodes.get('kakkyoku-byoyaku-result').innerHTML.includes('病薬診断の計算に失敗'),
         '失敗メッセージ'
+    );
+});
+
+test('ResultRenderer - 病薬OFF時は大運吉凶トグルを無効化する', () => {
+    const nodes = createDomStub();
+    const renderer = new ResultRenderer();
+    const inputs = sampleResultInputs();
+
+    renderer.showResults(
+        inputs.fortune, inputs.juuniunResults, inputs.tsuuhenResults,
+        sampleGreatFortuneCycles(), 1990,
+        null, null, null
+    );
+
+    const toggle = nodes.get('great-fortune-toggle');
+    assert.strictEqual(toggle.disabled, true, '病薬OFF時はトグルを無効化');
+    assert.strictEqual(toggle.checked, false, '病薬OFF時はトグルを解除');
+    assert.ok(
+        !nodes.get('great-fortune-result').innerHTML.includes('cycle-detail visible'),
+        '病薬OFF時は詳細を表示しない'
+    );
+});
+
+test('ResultRenderer - 大運吉凶トグルON状態を再描画後も反映する', () => {
+    const nodes = createDomStub();
+    const renderer = new ResultRenderer();
+    const inputs = sampleResultInputs();
+    nodes.get('great-fortune-toggle').checked = true;
+
+    renderer.showResults(
+        inputs.fortune, inputs.juuniunResults, inputs.tsuuhenResults,
+        sampleGreatFortuneCycles(), 1990,
+        {}, {}, {}, sampleDaiunEvaluations()
+    );
+
+    const toggle = nodes.get('great-fortune-toggle');
+    assert.strictEqual(toggle.disabled, false, '評価ありならトグルを有効化');
+    assert.ok(
+        nodes.get('great-fortune-result').innerHTML.includes('class="cycle-detail visible"'),
+        'ON状態で詳細を表示'
+    );
+
+    renderer.renderGreatFortune(sampleGreatFortuneCycles(), 1990, sampleDaiunEvaluations());
+    assert.ok(
+        nodes.get('great-fortune-result').innerHTML.includes('class="cycle-detail visible"'),
+        '再描画後も詳細表示を維持'
     );
 });
