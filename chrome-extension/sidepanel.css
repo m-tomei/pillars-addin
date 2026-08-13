@@ -81,31 +81,51 @@ section h2 {
 
 /* 日付入力 */
 .date-inputs,
-.time-inputs {
+.time-inputs,
+.tz-inputs {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .date-inputs input,
-.time-inputs input {
+.time-inputs input,
+.tz-inputs input,
+.tz-inputs select,
+select#prefecture {
   flex: 1;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+  background: white;
 }
 
 .date-inputs input:focus,
-.time-inputs input:focus {
+.time-inputs input:focus,
+.tz-inputs input:focus,
+.tz-inputs select:focus,
+select#prefecture:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .date-inputs span,
-.time-inputs span {
+.time-inputs span,
+.tz-inputs span {
   color: #666;
+}
+
+.tz-inputs select#tz-sign {
+  flex: 0 0 56px;
+}
+
+.help-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777;
+  line-height: 1.5;
 }
 
 /* 性別入力 */
@@ -322,7 +342,8 @@ footer {
 /* レスポンシブ */
 @media (max-width: 360px) {
   .date-inputs,
-  .time-inputs {
+  .time-inputs,
+  .tz-inputs {
     flex-wrap: wrap;
   }
   

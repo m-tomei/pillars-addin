@@ -42,6 +42,22 @@
             </div>
           </div>
 
+          <!-- 子時の切替 -->
+          <div class="form-group">
+            <label>子時の切替</label>
+            <div class="gender-inputs shi-mode-inputs">
+              <label class="radio-label">
+                <input type="radio" name="shi-mode" value="switch23" checked>
+                <span>23時切替</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="shi-mode" value="switch00">
+                <span>0時切替</span>
+              </label>
+            </div>
+            <p class="help-text" id="shi-mode-help">23:00〜0:59を子時。23時台は翌日の日柱として扱います</p>
+          </div>
+
           <!-- 性別 -->
           <div class="form-group">
             <label>性別 <span class="required">*</span></label>
@@ -57,10 +73,28 @@
             </div>
           </div>
 
-          <!-- 出生地 -->
+          <!-- 出生地（都道府県） -->
           <div class="form-group">
-            <label>出生地 <span class="optional">(任意)</span></label>
-            <input type="text" id="birthplace" placeholder="例：東京">
+            <label>出生地（都道府県） <span class="optional">(任意)</span></label>
+            <select id="prefecture">
+              <option value="">未選択</option>
+            </select>
+          </div>
+
+          <!-- 標準時からの時差 -->
+          <div class="form-group">
+            <label>標準時からの時差 <span class="optional">(任意)</span></label>
+            <div class="tz-inputs">
+              <select id="tz-sign">
+                <option value="+" selected>+</option>
+                <option value="-">-</option>
+              </select>
+              <input type="number" id="tz-hour" min="0" max="23" value="0">
+              <span>時間</span>
+              <input type="number" id="tz-minute" min="0" max="59" value="0">
+              <span>分</span>
+            </div>
+            <p class="help-text" id="tz-help">日本国内のみの場合は 0 のままで構いません。海外出生は、出生地の時計時刻を日本標準時へ合わせる差を入力します。夏時間は手動で時差に含めてください。</p>
           </div>
 
           <!-- ボタン -->
