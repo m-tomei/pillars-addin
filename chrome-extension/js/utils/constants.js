@@ -86,6 +86,16 @@ export const BRANCH_ELEMENTS = {
 export const MIN_YEAR = 1900;
 export const MAX_YEAR = 2100;
 
+// 時刻補正（V1.5）
+export const SHI_MODE = {
+  SWITCH_23: 'switch23',
+  SWITCH_00: 'switch00',
+};
+export const DEFAULT_SHI_MODE = SHI_MODE.SWITCH_23;
+export const JST_REFERENCE_LONGITUDE = 135.0;
+export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+export const MAX_ABS_OFFSET_MINUTES = 23 * 60 + 59;
+
 // エラーメッセージ
 export const ERROR_MESSAGES = {
   INVALID_DATE: "無効な日付です",
