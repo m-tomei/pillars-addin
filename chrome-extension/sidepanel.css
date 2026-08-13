@@ -293,16 +293,23 @@ input[type="text"]:focus {
 /* 命式テーブル */
 .fortune-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   margin-bottom: 24px;
   font-size: 13px;
 }
 
+.fortune-table col {
+  width: 25%;
+}
+
 .fortune-table th,
 .fortune-table td {
+  width: 25%;
   padding: 10px;
   text-align: center;
   border: 1px solid #ddd;
+  box-sizing: border-box;
 }
 
 .fortune-table th {
@@ -326,6 +333,7 @@ input[type="text"]:focus {
 .fortune-table .hidden-stems-row td {
   font-size: 11px;
   color: #7f8c8d;
+  white-space: nowrap;
 }
 
 .fortune-table .juuniun-row td,

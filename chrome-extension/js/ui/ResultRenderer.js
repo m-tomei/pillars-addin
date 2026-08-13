@@ -123,13 +123,19 @@ export class ResultRenderer {
    */
   renderFortuneTable(fortune, juuniunResults, tsuuhenResults) {
     const tableHTML = `
-      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <table class="fortune-table" style="width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 20px;">
+        <colgroup>
+          <col style="width: 25%">
+          <col style="width: 25%">
+          <col style="width: 25%">
+          <col style="width: 25%">
+        </colgroup>
         <thead>
           <tr style="background-color: #f0f0f0;">
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">時柱</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">日柱</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">月柱</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">年柱</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 25%;">時柱</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 25%;">日柱</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 25%;">月柱</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 25%;">年柱</th>
           </tr>
         </thead>
         <tbody>
@@ -164,7 +170,7 @@ export class ResultRenderer {
             </td>
           </tr>
           <!-- 蔵干 -->
-          <tr>
+          <tr class="hidden-stems-row">
             <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px;">
               ${fortune.hourPillar ? this.formatHiddenStems(fortune.hourPillar.hiddenStems) : "-"}
             </td>
