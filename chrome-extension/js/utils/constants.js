@@ -96,8 +96,10 @@ export const JST_REFERENCE_LONGITUDE = 135.0;
 export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 export const MAX_ABS_OFFSET_MINUTES = 23 * 60 + 59;
 
-export const TZ_HELP_TEXT =
-  '日本国内のみの場合は 0 のままで構いません。海外出生は、出生地の時計時刻を日本標準時へ合わせる差を入力します。夏時間は手動で時差に含めてください。';
+export const DEFAULT_PREFECTURE_CODE = '13';
+export const MANUAL_PREFECTURE_VALUE = 'manual';
+
+export const TZ_HELP_TEXT = '海外出生のみ入力。夏時間は時差に含めてください。';
 export const SHI_HELP_TEXT = {
   [SHI_MODE.SWITCH_23]: '23:00〜0:59を子時。23時台は翌日の日柱として扱います',
   [SHI_MODE.SWITCH_00]: '0:00〜1:59を子時。23時台は亥時・当日の日柱です',

@@ -1,7 +1,7 @@
 import { InputParser } from '../../js/utils/InputParser.js';
-import { DEFAULT_SHI_MODE, SHI_MODE } from '../../js/utils/constants.js';
+import { DEFAULT_SHI_MODE, MANUAL_PREFECTURE_VALUE, SHI_MODE } from '../../js/utils/constants.js';
 
-test('InputParser maps prefecture, offset, and shiMode', async () => {
+test('InputParser maps prefecture and ignores timezone when a prefecture is selected', async () => {
   const parsed = InputParser.parseManualInput(1990, 5, 1, 8, 30, '男性', {
     prefectureCode: '13',
     tzSign: '+',
@@ -10,10 +10,21 @@ test('InputParser maps prefecture, offset, and shiMode', async () => {
     shiMode: SHI_MODE.SWITCH_00,
   });
   assert.strictEqual(parsed.prefectureCode, '13');
-  assert.strictEqual(parsed.offsetMinutes, 330);
+  assert.strictEqual(parsed.offsetMinutes, 0);
   assert.strictEqual(parsed.shiMode, SHI_MODE.SWITCH_00);
   assert.strictEqual(parsed.hour, 8);
   assert.strictEqual(parsed.minute, 30);
+});
+
+test('InputParser 手動 keeps timezone offset', async () => {
+  const parsed = InputParser.parseManualInput(1990, 5, 1, 8, 30, '男性', {
+    prefectureCode: MANUAL_PREFECTURE_VALUE,
+    tzSign: '+',
+    tzHour: 5,
+    tzMinute: 30,
+  });
+  assert.strictEqual(parsed.prefectureCode, null);
+  assert.strictEqual(parsed.offsetMinutes, 330);
 });
 
 test('InputParser empty shiMode falls back to switch23', async () => {

@@ -10,13 +10,13 @@ function read(rel) {
   return fs.readFileSync(path.join(EXT_ROOT, rel), 'utf8');
 }
 
-test('P8 release gate: version is 1.5.0', async () => {
+test('P8 release gate: version is 1.5.2', async () => {
   const pkg = JSON.parse(read('package.json'));
   const manifest = JSON.parse(read('manifest.json'));
   const html = read('sidepanel.html');
-  assert.strictEqual(pkg.version, '1.5.0');
-  assert.strictEqual(manifest.version, '1.5.0');
-  assert.ok(html.includes('四柱推命 命式計算 v1.5.0'));
+  assert.strictEqual(pkg.version, '1.5.2');
+  assert.strictEqual(manifest.version, '1.5.2');
+  assert.ok(html.includes('四柱推命 命式計算 v1.5.2'));
 });
 
 test('P8 release gate: Tokyo longitude offset is +19 minutes', async () => {
@@ -70,6 +70,7 @@ test('P8 UI-01〜09 smoke: form, summary, footer, and help text exist in HTML', 
   assert.ok(html.includes('value="switch23"') && html.includes('checked'));
   assert.ok(html.includes('id="time-correction-summary"'));
   assert.ok(html.includes('id="save-png-btn"'));
-  assert.ok(html.includes('v1.5.0'));
-  assert.ok(html.includes('日本国内のみの場合は 0 のままで構いません'));
+  assert.ok(html.includes('v1.5.2'));
+  assert.ok(html.includes('海外出生のみ入力'));
+  assert.ok(html.includes('id="time-unknown"'));
 });
