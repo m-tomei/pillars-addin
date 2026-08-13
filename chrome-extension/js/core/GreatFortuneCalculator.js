@@ -114,31 +114,27 @@ export class GreatFortuneCalculator {
    * @param {number} year - 生年
    * @param {number} month - 生月
    * @param {number} day - 生日
+   * @param {number} hour - 生時
+   * @param {number} minute - 生分
    * @returns {Date} 次の節入り時刻
    * @private
    */
-  _getNextSolarTerm(year, month, day) {
-    const birthDate = DateUtils.createDate(year, month, day, 12, 0);
+  _getNextSolarTerm(year, month, day, hour, minute) {
+    const birthEpoch = DateUtils.createDate(year, month, day, hour, minute).getTime();
 
-    // 節気の順序（1月の小寒から12月の大雪まで日付順）
-    // Note: getSolarTermDateTime returns the date in the specified year.
-    // 小寒 is in Jan, 立春 is in Feb, ..., 大雪 is in Dec.
     const solarTerms = [
       '小寒', '立春', '啓蟄', '清明', '立夏', '芒種', '小暑',
       '立秋', '白露', '寒露', '立冬', '大雪'
     ];
 
-    // 現在の年の全節気をチェック
     for (const termName of solarTerms) {
       const termDt = this.fortuneCalc.getSolarTermDateTime(year, termName);
-      if (termDt > birthDate) {
+      if (termDt.getTime() > birthEpoch) {
         return termDt;
       }
     }
 
-    // 現在の年の節気がすべて過去の場合、次の年の立春を返す
-    const nextYearRisshun = this.fortuneCalc.getSolarTermDateTime(year + 1, '立春');
-    return nextYearRisshun;
+    return this.fortuneCalc.getSolarTermDateTime(year + 1, '立春');
   }
 
   /**
@@ -147,29 +143,27 @@ export class GreatFortuneCalculator {
    * @param {number} year - 生年
    * @param {number} month - 生月
    * @param {number} day - 生日
+   * @param {number} hour - 生時
+   * @param {number} minute - 生分
    * @returns {Date} 前の節入り時刻
    * @private
    */
-  _getPreviousSolarTerm(year, month, day) {
-    const birthDate = DateUtils.createDate(year, month, day, 12, 0);
+  _getPreviousSolarTerm(year, month, day, hour, minute) {
+    const birthEpoch = DateUtils.createDate(year, month, day, hour, minute).getTime();
 
-    // 節気の順序（12月の大雪から1月の小寒まで日付逆順）
     const solarTerms = [
       '大雪', '立冬', '寒露', '白露', '立秋', '小暑',
       '芒種', '立夏', '清明', '啓蟄', '立春', '小寒'
     ];
 
-    // 現在の年の全節気を逆順にチェック
     for (const termName of solarTerms) {
       const termDt = this.fortuneCalc.getSolarTermDateTime(year, termName);
-      if (termDt < birthDate) {
+      if (termDt.getTime() < birthEpoch) {
         return termDt;
       }
     }
 
-    // 現在の年の節気がすべて未来の場合、前の年の小寒を返す
-    const prevYearShokan = this.fortuneCalc.getSolarTermDateTime(year - 1, '小寒');
-    return prevYearShokan;
+    return this.fortuneCalc.getSolarTermDateTime(year - 1, '小寒');
   }
 
   /**
@@ -178,45 +172,66 @@ export class GreatFortuneCalculator {
    * @param {number} birthYear - 生年
    * @param {number} birthMonth - 生月
    * @param {number} birthDay - 生日
+   * @param {number} birthHour - 生時（時刻なしのときは呼び出し側が 12 を渡す）
+   * @param {number} birthMinute - 生分
    * @param {string} gender - 性別（"男性" or "女性"）
    * @param {string} roundingMethod - 端数処理方法（"round": 四捨五入、"ceil": 切り上げ）
    * @returns {number} 開始年齢（整数、0〜10歳）
    * @throws {InvalidDateError} 日付または性別が不正な場合
    * @throws {CalculationError} 計算中にエラーが発生した場合
    */
-  calculateStartAge(birthYear, birthMonth, birthDay, gender, roundingMethod = 'round') {
-    let birthDate;
+  calculateStartAge(
+    birthYear,
+    birthMonth,
+    birthDay,
+    birthHour,
+    birthMinute,
+    gender,
+    roundingMethod = 'round'
+  ) {
+    let birthInstant;
     try {
-      // 生年月日のDateオブジェクトを作成
-      birthDate = DateUtils.createDate(birthYear, birthMonth, birthDay, 12, 0);
+      birthInstant = DateUtils.createDate(
+        birthYear,
+        birthMonth,
+        birthDay,
+        birthHour,
+        birthMinute
+      );
     } catch (e) {
-      throw new InvalidDateError(`無効な日付です: ${birthYear}/${birthMonth}/${birthDay} - ${e.message}`);
+      throw new InvalidDateError(
+        `無効な日付です: ${birthYear}/${birthMonth}/${birthDay} ${birthHour}:${birthMinute} - ${e.message}`
+      );
     }
 
-    // 順行/逆行の判定
     const isForward = this.isForwardProgression(birthYear, gender);
 
-    // 次の節入り時刻を取得
-    let nextTermDt;
+    let termInstant;
     try {
       if (isForward) {
-        // 順行: 生日の次の節入り時刻
-        nextTermDt = this._getNextSolarTerm(birthYear, birthMonth, birthDay);
+        termInstant = this._getNextSolarTerm(
+          birthYear,
+          birthMonth,
+          birthDay,
+          birthHour,
+          birthMinute
+        );
       } else {
-        // 逆行: 生日の前の節入り時刻
-        nextTermDt = this._getPreviousSolarTerm(birthYear, birthMonth, birthDay);
+        termInstant = this._getPreviousSolarTerm(
+          birthYear,
+          birthMonth,
+          birthDay,
+          birthHour,
+          birthMinute
+        );
       }
     } catch (e) {
       throw new CalculationError(`節入り時刻の取得に失敗しました: ${e.message}`);
     }
 
-    // 日数を計算
-    const deltaDays = Math.abs(DateUtils.getDaysDifference(birthDate, nextTermDt));
+    const elapsedDays = Math.abs(DateUtils.getElapsedDays(birthInstant, termInstant));
+    const ageFloat = elapsedDays / 3.0;
 
-    // 日数を3で割って年齢を算出
-    const ageFloat = deltaDays / 3.0;
-
-    // 端数処理
     let age;
     if (roundingMethod === 'round') {
       age = Math.round(ageFloat);
@@ -228,10 +243,7 @@ export class GreatFortuneCalculator {
       );
     }
 
-    // 0〜10歳の範囲に制限
-    age = Math.max(0, Math.min(10, age));
-
-    return age;
+    return Math.max(0, Math.min(10, age));
   }
 
   /**
@@ -271,6 +283,8 @@ export class GreatFortuneCalculator {
       birthYear,
       birthMonth,
       birthDay,
+      birthHour,
+      birthMinute,
       gender,
       roundingMethod
     );
