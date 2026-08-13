@@ -102,6 +102,10 @@ export const SHI_HELP_TEXT = {
   [SHI_MODE.SWITCH_23]: '23:00〜0:59を子時。23時台は翌日の日柱として扱います',
   [SHI_MODE.SWITCH_00]: '0:00〜1:59を子時。23時台は亥時・当日の日柱です',
 };
+export const SHI_MODE_LABEL = {
+  [SHI_MODE.SWITCH_23]: '23時切替',
+  [SHI_MODE.SWITCH_00]: '0時切替',
+};
 
 // エラーメッセージ
 export const ERROR_MESSAGES = {

@@ -229,6 +229,44 @@ input[type="text"]:focus {
   margin-bottom: 16px;
 }
 
+.correction-summary {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9ff;
+  border: 1px solid #dce0f5;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+.correction-summary h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
+.correction-summary p,
+.correction-summary li {
+  font-size: 13px;
+  color: #555;
+}
+
+.correction-summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.correction-summary li {
+  margin-bottom: 4px;
+}
+
+.correction-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6c5ce7;
+}
+
 /* 命式テーブル */
 .fortune-table {
   width: 100%;
