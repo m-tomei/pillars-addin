@@ -12,6 +12,8 @@ import {
   MONTH_TERM_TO_BRANCH,
   BRANCH_TO_MONTH_INDEX,
   BASE_DATE_JIAZI_INDEX,
+  SHI_MODE,
+  DEFAULT_SHI_MODE,
 } from "../utils/constants.js";
 
 import {
@@ -139,22 +141,18 @@ export class FortuneCalculator {
    * @throws {InvalidDateError} 無効な日時の場合
    */
   calculateYearPillarWithDate(year, month, day, hour, minute) {
-    // 入力日時を作成
-    const inputDt = DateUtils.createDate(year, month, day, hour, minute);
+    const inputEpoch = this._toInputEpoch(year, month, day, hour, minute);
 
-    // 立春の日時を取得
     try {
-      const risshun = this.getSolarTermDateTime(year, "立春");
+      const risshunEpoch = this.getSolarTermDateTime(year, "立春").getTime();
 
-      // 立春前なら前年の干支
-      if (inputDt < risshun) {
+      // 立春前なら前年の干支（JST epoch 比較。OS TZ非依存）
+      if (inputEpoch < risshunEpoch) {
         return this.calculateYearPillar(year - 1);
-      } else {
-        return this.calculateYearPillar(year);
       }
+      return this.calculateYearPillar(year);
     } catch (error) {
       if (error instanceof SolarTermNotFoundError) {
-        // 現在の年の立春が見つからない場合は、年だけで計算
         return this.calculateYearPillar(year);
       }
       throw error;
@@ -174,13 +172,13 @@ export class FortuneCalculator {
    * @throws {InvalidDateError} 無効な日時の場合
    */
   calculateMonthPillar(year, month, day, hour, minute) {
-    const inputDt = DateUtils.createDate(year, month, day, hour, minute);
+    const inputEpoch = this._toInputEpoch(year, month, day, hour, minute);
 
     // 年データの存在確認
     this._validateYearDataExists(year);
 
     // 月支を判定
-    const monthBranch = this._determineMonthBranch(year, inputDt);
+    const monthBranch = this._determineMonthBranch(year, inputEpoch);
 
     // 月干を計算（年干から月干を求める）
     const { stem: yearStem } = this.calculateYearPillarWithDate(
@@ -213,24 +211,24 @@ export class FortuneCalculator {
    * 入力日時から月支を判定
    *
    * @param {number} year - 西暦年
-   * @param {Date} inputDt - 入力日時
+   * @param {number} inputEpoch - 入力日時の UTC epoch millis
    * @returns {string} 月支（子、丑、寅など）
    * @throws {CalculationError} 月支の判定に失敗した場合
    * @private
    */
-  _determineMonthBranch(year, inputDt) {
+  _determineMonthBranch(year, inputEpoch) {
     const monthTerms = Object.keys(MONTH_TERM_TO_BRANCH);
 
     // 各節気の期間を確認
     for (let i = 0; i < monthTerms.length; i++) {
       const termName = monthTerms[i];
-      if (this._isInTermPeriod(year, i, termName, monthTerms, inputDt)) {
+      if (this._isInTermPeriod(year, i, termName, monthTerms, inputEpoch)) {
         return MONTH_TERM_TO_BRANCH[termName];
       }
     }
 
     // 立春前の特殊ケース（年初）を処理
-    return this._handleEarlyYearCase(year, inputDt);
+    return this._handleEarlyYearCase(year, inputEpoch);
   }
 
   /**
@@ -240,15 +238,15 @@ export class FortuneCalculator {
    * @param {number} termIndex - 節気のインデックス
    * @param {string} termName - 節気名
    * @param {string[]} monthTerms - 節気名のリスト
-   * @param {Date} inputDt - 入力日時
+   * @param {number} inputEpoch - 入力日時の UTC epoch millis
    * @returns {boolean} 期間内の場合true
    * @private
    */
-  _isInTermPeriod(year, termIndex, termName, monthTerms, inputDt) {
-    const termDt = this.getSolarTermDateTime(year, termName);
-    const nextTermDt = this._getNextTermDateTime(year, termIndex, monthTerms);
+  _isInTermPeriod(year, termIndex, termName, monthTerms, inputEpoch) {
+    const termEpoch = this.getSolarTermDateTime(year, termName).getTime();
+    const nextTermEpoch = this._getNextTermDateTime(year, termIndex, monthTerms).getTime();
 
-    return termDt <= inputDt && inputDt < nextTermDt;
+    return termEpoch <= inputEpoch && inputEpoch < nextTermEpoch;
   }
 
   /**
@@ -276,29 +274,41 @@ export class FortuneCalculator {
    * 立春前の特殊ケースを処理
    *
    * @param {number} year - 西暦年
-   * @param {Date} inputDt - 入力日時
+   * @param {number} inputEpoch - 入力日時の UTC epoch millis
    * @returns {string} 月支（丑または子）
    * @throws {CalculationError} 月支の判定に失敗した場合
    * @private
    */
-  _handleEarlyYearCase(year, inputDt) {
-    const risshun = this.getSolarTermDateTime(year, "立春");
+  _handleEarlyYearCase(year, inputEpoch) {
+    const risshunEpoch = this.getSolarTermDateTime(year, "立春").getTime();
 
-    if (inputDt < risshun) {
+    if (inputEpoch < risshunEpoch) {
       // 小寒と立春の間なら丑月、小寒前なら子月
       try {
-        const shokan = this.getSolarTermDateTime(year, "小寒");
-        return inputDt >= shokan ? "丑" : "子";
+        const shokanEpoch = this.getSolarTermDateTime(year, "小寒").getTime();
+        return inputEpoch >= shokanEpoch ? "丑" : "子";
       } catch (error) {
         if (error instanceof SolarTermNotFoundError) {
-          // 小寒のデータがない場合は丑月とする（フォールバック）
           return "丑";
         }
         throw error;
       }
-    } else {
-      throw new CalculationError("月支の判定に失敗しました");
     }
+    throw new CalculationError("月支の判定に失敗しました");
+  }
+
+  /**
+   * JST暦の数値日時 → UTC epoch millis
+   * @private
+   */
+  _toInputEpoch(year, month, day, hour, minute) {
+    return DateUtils.createDate(
+      year,
+      month,
+      day,
+      hour ?? 0,
+      minute ?? 0,
+    ).getTime();
   }
 
   /**
@@ -364,11 +374,10 @@ export class FortuneCalculator {
    *
    * @description
    * 日柱は暦の日付で計算します。節入り時刻は月柱の計算に使用し、
-   * 日柱には影響しません。23時台の日跨ぎ処理は時柱で行います。
+   * 日柱には影響しません。23時台の日跨ぎは `resolveDayPillarDate` が担う。
    */
   calculateDayPillar(year, month, day, hour = 12, minute = 0) {
-    // 日付の妥当性チェック
-    DateUtils.createDate(year, month, day, hour, minute);
+    DateUtils.createDate(year, month, day);
 
     if (!this.stemBranchData || !this.stemBranchData.sixty_jiazi) {
       throw new CalculationError("干支データが初期化されていません");
@@ -392,15 +401,31 @@ export class FortuneCalculator {
     // 参考:
     //   - BASE_DATE_JIAZI_INDEX = 10 (constants.jsで定義)
     //   - 六十甲子: 甲子(0), 乙丑(1), ... , 甲戌(10), ... , 癸亥(59)
-    const baseDate = new Date(1900, 0, 1); // 1900年1月1日
-
-    // 暦上の日柱を計算（節入り時刻は考慮しない）
-    const inputDate = new Date(year, month - 1, day);
-    const deltaDays = DateUtils.getDaysDifference(baseDate, inputDate);
-    const jiaziIndex = (BASE_DATE_JIAZI_INDEX + deltaDays) % 60;
+    const baseDate = DateUtils.createDate(1900, 1, 1);
+    const inputDate = DateUtils.createDate(year, month, day);
+    const deltaDays = DateUtils.getCalendarDaysDifference(baseDate, inputDate);
+    const jiaziIndex = (((BASE_DATE_JIAZI_INDEX + deltaDays) % 60) + 60) % 60;
 
     const jiazi = this.stemBranchData.sixty_jiazi[jiaziIndex];
     return { stem: jiazi.stem, branch: jiazi.branch };
+  }
+
+  /**
+   * 日柱・時干用の暦日を解決する。年柱・月柱・大運には使わない。
+   * switch23 かつ 23時台のときのみ翌日。
+   *
+   * @param {number} year
+   * @param {number} month
+   * @param {number} day
+   * @param {number|null} hour
+   * @param {string} shiMode
+   * @returns {{year:number, month:number, day:number}}
+   */
+  resolveDayPillarDate(year, month, day, hour, shiMode = DEFAULT_SHI_MODE) {
+    if (shiMode === SHI_MODE.SWITCH_23 && hour === 23) {
+      return DateUtils.addDays(year, month, day, 1);
+    }
+    return { year, month, day };
   }
 
   /**
@@ -409,14 +434,16 @@ export class FortuneCalculator {
    * @param {number} hour - 時（0-23）
    * @param {number} minute - 分（0-59）
    * @param {string} dayStem - 日の天干（時柱の天干計算に必要）
+   * @param {string} shiMode - `switch23`（既定）または `switch00`
    * @returns {{stem: string, branch: string}} 時柱
    * @throws {InvalidDateError} 無効な時刻の場合
    * @throws {CalculationError} 無効な日干の場合
    *
    * @description
-   * 23時台は翌日の子時として扱う
+   * switch23: 23:00-00:59 を子時。日柱の翌日扱いは resolveDayPillarDate 側。
+   * switch00: 00:00-01:59 を子時。23時台は亥。
    */
-  calculateHourPillar(hour, minute, dayStem) {
+  calculateHourPillar(hour, minute, dayStem, shiMode = DEFAULT_SHI_MODE) {
     if (hour < 0 || hour > 23) {
       throw new InvalidDateError(`無効な時刻です: ${hour}時`);
     }
@@ -424,18 +451,12 @@ export class FortuneCalculator {
       throw new InvalidDateError(`無効な分です: ${minute}分`);
     }
 
-    // 時支を決定（数式ベース）
-    // 23:00-00:59 → 子時（インデックス0）
-    // 01:00-02:59 → 丑時（インデックス1）
-    // ...
-    // 21:00-22:59 → 亥時（インデックス11）
-    //
-    // 23時台は翌日の0時として扱うため (hour + 1) % 24 で正規化
-    // 2時間ごとにインデックスが1つ進むため 2 で割る
-    const hourBranchIndex = Math.floor(((hour + 1) % 24) / 2);
+    const hourBranchIndex =
+      shiMode === SHI_MODE.SWITCH_00
+        ? Math.floor(hour / 2)
+        : Math.floor(((hour + 1) % 24) / 2);
     const hourBranch = HOUR_BRANCHES[hourBranchIndex];
 
-    // 時干を計算（五虎遁日起時訣）
     if (!HOUR_STEM_TABLE[dayStem]) {
       throw new CalculationError(`無効な日干です: ${dayStem}`);
     }
@@ -453,6 +474,8 @@ export class FortuneCalculator {
    * @param {number} day - 日
    * @param {number} hour - 時（0-23）
    * @param {number} minute - 分
+   * @param {object} [options]
+   * @param {string} [options.shiMode='switch23']
    * @returns {{
    *   yearPillar: {stem: string, branch: string, hiddenStems: string[]},
    *   monthPillar: {stem: string, branch: string, hiddenStems: string[]},
@@ -460,8 +483,10 @@ export class FortuneCalculator {
    *   hourPillar: {stem: string, branch: string, hiddenStems: string[]}
    * }} 完全な命式
    */
-  calculateFortune(year, month, day, hour, minute) {
-    // 年柱
+  calculateFortune(year, month, day, hour, minute, options = {}) {
+    const shiMode = options.shiMode ?? DEFAULT_SHI_MODE;
+
+    // 年柱・月柱は t_corrected（呼び出し側が渡す日時）を使う。子時の人工+1日は適用しない。
     const yearPillar = this.calculateYearPillarWithDate(
       year,
       month,
@@ -471,7 +496,6 @@ export class FortuneCalculator {
     );
     const yearHidden = this.getHiddenStems(yearPillar.branch);
 
-    // 月柱
     const monthPillar = this.calculateMonthPillar(
       year,
       month,
@@ -481,17 +505,18 @@ export class FortuneCalculator {
     );
     const monthHidden = this.getHiddenStems(monthPillar.branch);
 
-    // 日柱（節入り時刻による補正のため時刻も渡す）
-    const dayPillar = this.calculateDayPillar(year, month, day, hour, minute);
+    // 日柱・時干のみ resolveDayPillarDate
+    const dayYmd = this.resolveDayPillarDate(year, month, day, hour, shiMode);
+    const dayPillar = this.calculateDayPillar(dayYmd.year, dayYmd.month, dayYmd.day);
     const dayHidden = this.getHiddenStems(dayPillar.branch);
 
-    // 時柱（時刻が指定されている場合のみ計算）
     let hourPillarResult = null;
     if (hour !== null && hour !== undefined) {
       const hourPillar = this.calculateHourPillar(
         hour,
         minute || 0,
         dayPillar.stem,
+        shiMode,
       );
       const hourHidden = this.getHiddenStems(hourPillar.branch);
       hourPillarResult = {

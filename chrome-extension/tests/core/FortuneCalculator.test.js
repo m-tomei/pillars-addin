@@ -54,6 +54,7 @@ test('FortuneCalculator.calculateFortune returns correct structure', async () =>
 });
 
 test('FortuneCalculator.calculateFortune handles standard date (2023-06-15)', async () => {
+    // ST-02: 補正なし・非23時台は V1.0 と同じ柱
     // 2023-06-15 12:00
     // 2023 (癸卯), 6月 (芒種後 -> 戊午), 15日
     const result = await calculator.calculateFortune(2023, 6, 15, 12, 0);
