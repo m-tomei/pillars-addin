@@ -84,7 +84,7 @@ export class InputManager {
         }
 
         if (hour !== null && hour !== undefined) {
-            if (hour < 0 || hour > 23) {
+            if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
                 throw new InvalidDateError("時は0〜23の範囲で入力してください");
             }
             if (data.minute === null || data.minute === undefined) {
@@ -94,10 +94,16 @@ export class InputManager {
             data.minute = null;
         }
 
-        if (data.minute !== null && (data.minute < 0 || data.minute > 59)) {
+        if (
+            data.minute !== null &&
+            (!Number.isInteger(data.minute) || data.minute < 0 || data.minute > 59)
+        ) {
             throw new InvalidDateError("分は0〜59の範囲で入力してください");
         }
 
+        if (data.tzSign !== "+" && data.tzSign !== "-") {
+            throw new InvalidDateError(`時差の符号が不正です: ${data.tzSign}`);
+        }
         if (data.shiMode == null || data.shiMode === "") {
             data.shiMode = DEFAULT_SHI_MODE;
         }

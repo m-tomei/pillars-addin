@@ -42,6 +42,27 @@ test('empty hour stays no-time even if minute is present', async () => {
   assert.strictEqual(parsed.minute, null);
 });
 
+test('non-numeric hour or minute is a form error', async () => {
+  await assert.throws(
+    async () => managerWith({ ...BASE, hour: 'abc' }).getFormInput(),
+    '時',
+    'non-numeric hour should be rejected'
+  );
+  await assert.throws(
+    async () => managerWith({ ...BASE, minute: 'abc' }).getFormInput(),
+    '分',
+    'non-numeric minute should be rejected'
+  );
+});
+
+test('invalid timezone sign is a form error', async () => {
+  await assert.throws(
+    async () => managerWith({ ...BASE, tzSign: '*' }).getFormInput(),
+    '時差',
+    'invalid timezone sign should be rejected'
+  );
+});
+
 test('TC-09 offset ±24:00 is a form error', async () => {
   await assert.throws(
     async () => managerWith({ ...BASE, tzHour: '24', tzMinute: '0' }).getFormInput(),
