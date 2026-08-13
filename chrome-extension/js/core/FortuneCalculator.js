@@ -302,7 +302,13 @@ export class FortuneCalculator {
    * @private
    */
   _toInputEpoch(year, month, day, hour, minute) {
-    return DateUtils.toJstEpochMillis(year, month, day, hour ?? 0, minute ?? 0);
+    return DateUtils.createDate(
+      year,
+      month,
+      day,
+      hour ?? 0,
+      minute ?? 0,
+    ).getTime();
   }
 
   /**

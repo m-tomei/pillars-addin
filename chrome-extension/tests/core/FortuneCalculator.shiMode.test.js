@@ -117,6 +117,23 @@ test('ST-02 no correction, non-23h matches V1.0 pillars', async () => {
   assert.strictEqual(pillar(morning, 'hourPillar'), '戊辰');
 });
 
+test('year/month pillar APIs reject invalid calendar dates', async () => {
+  await assert.throws(
+    async () => {
+      calculator.calculateYearPillarWithDate(2023, 2, 30, 12, 0);
+    },
+    '無効な日付',
+    'year pillar should reject February 30'
+  );
+  await assert.throws(
+    async () => {
+      calculator.calculateMonthPillar(2023, 2, 30, 12, 0);
+    },
+    '無効な日付',
+    'month pillar should reject February 30'
+  );
+});
+
 test('resolveDayPillarDate boundaries 22/23/0/1 x both modes', async () => {
   const cases = [
     { hour: 22, mode: SHI_MODE.SWITCH_23, expected: BASE },
