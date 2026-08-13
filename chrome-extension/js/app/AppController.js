@@ -6,22 +6,23 @@ import { FortuneCalculator } from "../core/FortuneCalculator.js";
 import { GreatFortuneCalculator } from "../core/GreatFortuneCalculator.js";
 import { JuuniunCalculator } from "../core/JuuniunCalculator.js";
 import { TsuuhenCalculator } from "../core/TsuuhenCalculator.js";
+import { TimeCorrectionService } from "../core/TimeCorrectionService.js";
 import { FormRenderer } from "../ui/FormRenderer.js";
 import { ResultRenderer } from "../ui/ResultRenderer.js";
 import { ImageExporter } from "../ui/ImageExporter.js";
 import { InputManager } from "./InputManager.js";
 
 export class AppController {
-    constructor() {
-        this.dataLoader = null;
-        this.fortuneCalculator = null;
-        this.greatFortuneCalculator = null;
-        this.juuniunCalculator = null;
-        this.tsuuhenCalculator = null;
-
-        this.formRenderer = null;
-        this.resultRenderer = null;
-        this.inputManager = null;
+    constructor(options = {}) {
+        this.formRenderer = options.formRenderer ?? null;
+        this.resultRenderer = options.resultRenderer ?? null;
+        this.inputManager = options.inputManager ?? null;
+        this.dataLoader = options.dataLoader ?? null;
+        this.fortuneCalculator = options.fortuneCalculator ?? null;
+        this.greatFortuneCalculator = options.greatFortuneCalculator ?? null;
+        this.juuniunCalculator = options.juuniunCalculator ?? null;
+        this.tsuuhenCalculator = options.tsuuhenCalculator ?? null;
+        this.timeCorrectionService = options.timeCorrectionService ?? null;
 
         this.initialized = false;
     }
@@ -33,29 +34,29 @@ export class AppController {
         try {
             console.log("Initializing application...");
 
-            // UIコンポーネントの初期化
-            this.formRenderer = new FormRenderer();
-            this.resultRenderer = new ResultRenderer();
-            this.inputManager = new InputManager(this.formRenderer);
+            this.formRenderer = this.formRenderer ?? new FormRenderer();
+            this.resultRenderer = this.resultRenderer ?? new ResultRenderer();
+            this.inputManager = this.inputManager ?? new InputManager(this.formRenderer);
+            this.dataLoader = this.dataLoader ?? new DataLoader();
 
-            // DataLoader初期化
-            this.dataLoader = new DataLoader();
+            const master = await this.dataLoader.loadPrefectureLongitude();
+            this.timeCorrectionService = this.timeCorrectionService ?? new TimeCorrectionService(master);
+            this.formRenderer.populatePrefectures(master);
+            this.inputManager.setLongitudeMaster(master);
 
-            // 計算エンジンの初期化
-            this.fortuneCalculator = new FortuneCalculator(this.dataLoader);
+            this.fortuneCalculator = this.fortuneCalculator ?? new FortuneCalculator(this.dataLoader);
             await this.fortuneCalculator.initialize();
 
-            this.greatFortuneCalculator = new GreatFortuneCalculator(
+            this.greatFortuneCalculator = this.greatFortuneCalculator ?? new GreatFortuneCalculator(
                 this.fortuneCalculator
             );
             await this.greatFortuneCalculator.initialize();
 
-            this.juuniunCalculator = new JuuniunCalculator(this.dataLoader);
+            this.juuniunCalculator = this.juuniunCalculator ?? new JuuniunCalculator(this.dataLoader);
             await this.juuniunCalculator.initialize();
 
-            this.tsuuhenCalculator = new TsuuhenCalculator();
+            this.tsuuhenCalculator = this.tsuuhenCalculator ?? new TsuuhenCalculator();
 
-            // イベントリスナーのセットアップ
             this.setupEventListeners();
 
             this.initialized = true;
@@ -63,9 +64,14 @@ export class AppController {
 
         } catch (error) {
             console.error("Initialization error:", error);
-            this.formRenderer.showError(
-                "アプリケーションの初期化に失敗しました: " + error.message
-            );
+            this.initialized = false;
+            if (this.formRenderer && typeof this.formRenderer.showError === "function") {
+                this.formRenderer.showError(
+                    "アプリケーションの初期化に失敗しました: " + error.message
+                );
+            } else {
+                throw error;
+            }
         }
     }
 
@@ -73,86 +79,112 @@ export class AppController {
      * イベントリスナーのセットアップ
      */
     setupEventListeners() {
-        // 計算実行
         this.formRenderer.onSubmit(this.handleCalculate.bind(this));
-
-        // クリア
         this.formRenderer.onClear(this.handleClear.bind(this));
-
-        // クリップボード貼り付け
         this.formRenderer.onPaste(this.handlePaste.bind(this));
-
-        // PNG保存
         this.resultRenderer.onSavePNG(this.handleSavePNG.bind(this));
+    }
+
+    /**
+     * 入力から命式・大運を計算する（UI非依存）
+     */
+    runCalculation(input) {
+        let correction;
+        let fortune;
+        let cycles;
+        let displayYear;
+        const shiMode = input.shiMode;
+
+        if (input.hour == null) {
+            correction = { applied: false, reason: "no_time" };
+            fortune = this.fortuneCalculator.calculateFortune(
+                input.year,
+                input.month,
+                input.day,
+                null,
+                null,
+                { shiMode }
+            );
+            cycles = this.greatFortuneCalculator.calculateCycles(
+                input.year,
+                input.month,
+                input.day,
+                12,
+                0,
+                input.gender
+            );
+            displayYear = input.year;
+        } else {
+            correction = this.timeCorrectionService.correct({
+                year: input.year,
+                month: input.month,
+                day: input.day,
+                hour: input.hour,
+                minute: input.minute,
+                prefectureCode: input.prefectureCode,
+                offsetMinutes: input.offsetMinutes,
+            });
+            const { year: y, month: m, day: d, hour: h, minute: mi } = correction.corrected;
+            fortune = this.fortuneCalculator.calculateFortune(
+                y, m, d, h, mi, { shiMode }
+            );
+            cycles = this.greatFortuneCalculator.calculateCycles(
+                y, m, d, h, mi, input.gender
+            );
+            displayYear = y;
+        }
+
+        const juuniunResults = this.juuniunCalculator.calculateForPillars(
+            fortune.dayPillar.stem,
+            fortune.yearPillar.branch,
+            fortune.monthPillar.branch,
+            fortune.dayPillar.branch,
+            fortune.hourPillar ? fortune.hourPillar.branch : null
+        );
+
+        const tsuuhenResults = this.tsuuhenCalculator.calculateForPillars(
+            fortune.dayPillar.stem,
+            fortune.yearPillar.stem,
+            fortune.monthPillar.stem,
+            fortune.hourPillar ? fortune.hourPillar.stem : null
+        );
+
+        return {
+            fortune,
+            juuniunResults,
+            tsuuhenResults,
+            cycles,
+            displayYear,
+            correction,
+            shiMode,
+        };
     }
 
     /**
      * 計算ハンドラ
      */
     async handleCalculate() {
-        console.time('calculation');
+        console.time("calculation");
         try {
             this.formRenderer.hideError();
 
-            // 入力取得と検証
             const inputData = this.inputManager.getFormInput();
+            const result = this.runCalculation(inputData);
 
-            console.log("Input data:", inputData);
-
-            // 1. 命式計算
-            const fortune = await this.fortuneCalculator.calculateFortune(
-                inputData.year,
-                inputData.month,
-                inputData.day,
-                inputData.hour,
-                inputData.minute
-            );
-            console.log("Fortune calculated:", fortune);
-
-            // 2. 十二運計算
-            const juuniunResults = this.juuniunCalculator.calculateForPillars(
-                fortune.dayPillar.stem,
-                fortune.yearPillar.branch,
-                fortune.monthPillar.branch,
-                fortune.dayPillar.branch,
-                fortune.hourPillar ? fortune.hourPillar.branch : null
-            );
-            console.log("Juuniun calculated:", juuniunResults);
-
-            // 3. 通変星計算
-            const tsuuhenResults = this.tsuuhenCalculator.calculateForPillars(
-                fortune.dayPillar.stem,
-                fortune.yearPillar.stem,
-                fortune.monthPillar.stem,
-                fortune.hourPillar ? fortune.hourPillar.stem : null
-            );
-            console.log("Tsuuhen calculated:", tsuuhenResults);
-
-            // 4. 大運計算
-            const greatFortuneCycles = this.greatFortuneCalculator.calculateCycles(
-                inputData.year,
-                inputData.month,
-                inputData.day,
-                inputData.hour,
-                inputData.minute,
-                inputData.gender
-            );
-            console.log("Great fortune cycles calculated:", greatFortuneCycles);
-
-            // 結果表示
             this.resultRenderer.showResults(
-                fortune,
-                juuniunResults,
-                tsuuhenResults,
-                greatFortuneCycles,
-                inputData.year
+                result.fortune,
+                result.juuniunResults,
+                result.tsuuhenResults,
+                result.cycles,
+                result.displayYear,
+                { correction: result.correction, shiMode: result.shiMode }
             );
 
         } catch (error) {
             console.error("Calculation error:", error);
             this.formRenderer.showError(error.message);
         } finally {
-            console.timeEnd('calculation');
+            console.timeEnd("calculation");
         }
     }
 
@@ -182,26 +214,22 @@ export class AppController {
      * PNG保存ハンドラ
      */
     async handleSavePNG() {
-        // ボタンへの参照を保持
         const saveBtn = this.resultRenderer?.elements?.savePngBtn;
 
         try {
             this.formRenderer.hideError();
 
-            // フォームの値からファイル名用の年を取得
             const inputData = this.formRenderer.getValues();
             const year = inputData.year || "unknown";
 
             const targetElement = this.resultRenderer?.elements?.resultSection;
 
-            // 要素が表示されていない場合はエラー
             if (!targetElement || targetElement.style.display === "none") {
                 throw new Error("計算結果がありません。まず計算を実行してください。");
             }
 
             const filename = ImageExporter.generateFilename("fortune", year);
 
-            // ボタンを一時的に隠す
             if (saveBtn) {
                 saveBtn.style.display = "none";
             }
@@ -212,7 +240,6 @@ export class AppController {
             console.error("Save PNG error:", error);
             this.formRenderer.showError("PNG保存に失敗しました: " + error.message);
         } finally {
-            // ボタンを確実に戻す
             if (saveBtn) {
                 saveBtn.style.display = "";
             }
