@@ -2,7 +2,7 @@
  * 入力解析ユーティリティ
  */
 import { InvalidDateError } from "./errors.js";
-import { DEFAULT_SHI_MODE } from "./constants.js";
+import { DEFAULT_SHI_MODE, MANUAL_PREFECTURE_VALUE } from "./constants.js";
 import { TimeCorrectionService } from "../core/TimeCorrectionService.js";
 
 function isBlank(value) {
@@ -26,8 +26,8 @@ export class InputParser {
         const parsedMonth = parseInt(month, 10);
         const parsedDay = parseInt(day, 10);
 
-        const parsedHour = isBlank(hour) ? null : parseInt(hour, 10);
-        const parsedMinute = isBlank(minute) ? null : parseInt(minute, 10);
+        const parsedHour = extras.timeUnknown || isBlank(hour) ? null : parseInt(hour, 10);
+        const parsedMinute = extras.timeUnknown || isBlank(minute) ? null : parseInt(minute, 10);
 
         let normalizedGender = null;
         if (gender === "male" || gender === "男性" || gender === "男") {
@@ -37,12 +37,16 @@ export class InputParser {
         }
 
         const prefectureRaw = extras.prefectureCode;
-        const prefectureCode = isBlank(prefectureRaw) ? null : String(prefectureRaw).trim();
+        const prefectureCodeRaw = isBlank(prefectureRaw) ? null : String(prefectureRaw).trim();
+        const isManual = prefectureCodeRaw === MANUAL_PREFECTURE_VALUE;
+        const prefectureCode = isManual || prefectureCodeRaw == null ? null : prefectureCodeRaw;
 
         const tzSign = isBlank(extras.tzSign) ? "+" : extras.tzSign;
         const tzHour = isBlank(extras.tzHour) ? 0 : extras.tzHour;
         const tzMinute = isBlank(extras.tzMinute) ? 0 : extras.tzMinute;
-        const offsetMinutes = TimeCorrectionService.parseOffset(tzSign, tzHour, tzMinute);
+        const offsetMinutes = prefectureCode
+            ? 0
+            : TimeCorrectionService.parseOffset(tzSign, tzHour, tzMinute);
 
         let shiMode = extras.shiMode;
         if (isBlank(shiMode)) {
@@ -58,10 +62,11 @@ export class InputParser {
             gender: normalizedGender,
             prefectureCode,
             offsetMinutes,
-            tzSign,
-            tzHour: isBlank(extras.tzHour) ? 0 : Number(extras.tzHour),
-            tzMinute: isBlank(extras.tzMinute) ? 0 : Number(extras.tzMinute),
+            tzSign: prefectureCode ? "+" : tzSign,
+            tzHour: prefectureCode ? 0 : (isBlank(extras.tzHour) ? 0 : Number(extras.tzHour)),
+            tzMinute: prefectureCode ? 0 : (isBlank(extras.tzMinute) ? 0 : Number(extras.tzMinute)),
             shiMode,
+            timeUnknown: !!extras.timeUnknown,
         };
     }
 

@@ -11,7 +11,7 @@ function readDoc(name) {
 
 test('P7-T2 USER_GUIDE covers Tokyo +19, shi-mode, no-time 12:00, and PNG summary', async () => {
   const guide = readDoc('USER_GUIDE.md');
-  assert.ok(guide.includes('v1.5.0') || guide.includes('1.5.0'));
+  assert.ok(guide.includes('v1.5.2') || guide.includes('1.5.2') || guide.includes('1.5.0'));
   assert.ok(guide.includes('+19分'), 'Tokyo longitude offset');
   assert.ok(guide.includes('東経135'));
   assert.ok(guide.includes('23時切替'));
@@ -19,6 +19,8 @@ test('P7-T2 USER_GUIDE covers Tokyo +19, shi-mode, no-time 12:00, and PNG summar
   assert.ok(guide.includes('翌日の日柱'));
   assert.ok(guide.includes('12:00'), 'no-time 大運 uses 12:00');
   assert.ok(guide.includes('時柱も出しません') || guide.includes('時柱なし'));
+  assert.ok(guide.includes('時刻不明'));
+  assert.ok(guide.includes('手動'));
   assert.ok(guide.includes('夏時間'));
   assert.ok(guide.includes('子平法'));
 });

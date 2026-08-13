@@ -33,12 +33,16 @@
 
           <!-- 出生時刻 -->
           <div class="form-group">
-            <label>出生時刻 <span class="optional">(任意)</span></label>
+            <label>出生時刻</label>
             <div class="time-inputs">
               <input type="number" id="hour" placeholder="時" min="0" max="23">
               <span>時</span>
               <input type="number" id="minute" placeholder="分" min="0" max="59">
               <span>分</span>
+              <label class="time-unknown-label">
+                <input type="checkbox" id="time-unknown">
+                <span>時刻不明</span>
+              </label>
             </div>
           </div>
 
@@ -75,15 +79,13 @@
 
           <!-- 出生地（都道府県） -->
           <div class="form-group">
-            <label>出生地（都道府県） <span class="optional">(任意)</span></label>
-            <select id="prefecture">
-              <option value="">未選択</option>
-            </select>
+            <label>出生地（都道府県）</label>
+            <select id="prefecture"></select>
           </div>
 
-          <!-- 標準時からの時差 -->
-          <div class="form-group">
-            <label>標準時からの時差 <span class="optional">(任意)</span></label>
+          <!-- 標準時からの時差（手動選択時のみ表示） -->
+          <div class="form-group" id="tz-group" style="display: none;">
+            <label>標準時からの時差</label>
             <div class="tz-inputs">
               <select id="tz-sign">
                 <option value="+" selected>+</option>
@@ -94,7 +96,7 @@
               <input type="number" id="tz-minute" min="0" max="59" value="0">
               <span>分</span>
             </div>
-            <p class="help-text" id="tz-help">日本国内のみの場合は 0 のままで構いません。海外出生は、出生地の時計時刻を日本標準時へ合わせる差を入力します。夏時間は手動で時差に含めてください。</p>
+            <p class="help-text" id="tz-help">海外出生のみ入力。夏時間は時差に含めてください。</p>
           </div>
 
           <!-- ボタン -->
@@ -135,7 +137,7 @@
     </main>
 
     <footer>
-      <p>四柱推命 命式計算 v1.5.0</p>
+      <p>四柱推命 命式計算 v1.5.2</p>
     </footer>
   </div>
 

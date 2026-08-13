@@ -42,6 +42,7 @@ export class InputManager {
                 tzHour: rawValues.tzHour,
                 tzMinute: rawValues.tzMinute,
                 shiMode: rawValues.shiMode,
+                timeUnknown: rawValues.timeUnknown,
             }
         );
 
@@ -90,8 +91,11 @@ export class InputManager {
             if (data.minute === null || data.minute === undefined) {
                 data.minute = 0;
             }
-        } else {
+        } else if (data.timeUnknown) {
+            data.hour = null;
             data.minute = null;
+        } else {
+            throw new InvalidDateError("時刻を入力するか、時刻不明にチェックしてください");
         }
 
         if (
