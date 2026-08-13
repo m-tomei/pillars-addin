@@ -84,6 +84,14 @@ export class DataLoader {
   }
 
   /**
+   * 都道府県経度マスタを読み込む
+   * @returns {Promise<Object>}
+   */
+  async loadPrefectureLongitude() {
+    return await this.loadJSON('prefecture_longitude.json');
+  }
+
+  /**
    * キャッシュをクリア
    */
   clearCache() {
