@@ -3,6 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { FortuneCalculator } from '../../js/core/FortuneCalculator.js';
 import { GreatFortuneCalculator } from '../../js/core/GreatFortuneCalculator.js';
+import { DateUtils } from '../../js/utils/dateUtils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, '../../data');
@@ -35,20 +36,16 @@ test('GreatFortuneCalculator.initialize', async () => {
 });
 
 test('GreatFortuneCalculator.calculateStartAge', async () => {
-    // 2023-06-15, Male
-    const age = greatFortuneCalc.calculateStartAge(2023, 6, 15, '男性');
+    // 2023-06-15 12:00, Male（V1.0 と同じ正午ケース）
+    const age = greatFortuneCalc.calculateStartAge(2023, 6, 15, 12, 0, '男性');
 
-    // Debug info
     const isForward = greatFortuneCalc.isForwardProgression(2023, '男性');
-    // We can't easily access private method _getPreviousSolarTerm directly unless we modify visibility or use reflection, 
-    // but in JS valid to call private methods if not enforced by private fields #.
-    // However, methods are likely accessible.
     const term = isForward ?
-        greatFortuneCalc._getNextSolarTerm(2023, 6, 15) :
-        greatFortuneCalc._getPreviousSolarTerm(2023, 6, 15);
+        greatFortuneCalc._getNextSolarTerm(2023, 6, 15, 12, 0) :
+        greatFortuneCalc._getPreviousSolarTerm(2023, 6, 15, 12, 0);
 
-    const birthDate = new Date(2023, 5, 15, 12, 0);
-    const diff = (birthDate - term) / (1000 * 60 * 60 * 24);
+    const birthDate = DateUtils.createDate(2023, 6, 15, 12, 0);
+    const diff = DateUtils.getElapsedDays(birthDate, term);
 
     console.log(`    DEBUG: 2023-06-15 Male. IsForward: ${isForward}`);
     console.log(`    DEBUG: Term Date: ${term.toISOString()}`);
