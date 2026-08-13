@@ -5,9 +5,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXT_ROOT = path.resolve(__dirname, '../..');
 
-const EXPECTED_VERSION = '1.5.2';
+const EXPECTED_VERSION = '1.5.3';
 
-test('UI-08 footer, package.json, and manifest are 1.5.2', async () => {
+test('UI-08 footer, package.json, and manifest are 1.5.3', async () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(EXT_ROOT, 'package.json'), 'utf8'));
   const manifest = JSON.parse(fs.readFileSync(path.join(EXT_ROOT, 'manifest.json'), 'utf8'));
   const html = fs.readFileSync(path.join(EXT_ROOT, 'sidepanel.html'), 'utf8');
