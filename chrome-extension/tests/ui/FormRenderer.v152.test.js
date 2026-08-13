@@ -75,6 +75,11 @@ test('V1.5.2 date and time stay on one row in CSS', async () => {
   assert.ok(html.includes('class="date-inputs"'));
   assert.ok(html.includes('class="time-inputs"'));
   assert.ok(html.includes('時刻不明'));
+  assert.ok(!html.includes('placeholder="年"'));
+  assert.ok(!html.includes('placeholder="月"'));
+  assert.ok(!html.includes('placeholder="日"'));
+  assert.ok(!html.includes('placeholder="時"'));
+  assert.ok(!html.includes('placeholder="分"'));
 });
 
 test('V1.5.2 time-unknown disables hour and minute and clears them', async () => {
