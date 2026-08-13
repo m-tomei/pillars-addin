@@ -1,59 +1,134 @@
 /**
  * フォーム描画・操作クラス
  */
+import {
+  DEFAULT_SHI_MODE,
+  SHI_HELP_TEXT,
+  SHI_MODE,
+} from "../utils/constants.js";
+
 export class FormRenderer {
-    constructor() {
+    constructor(doc = typeof document !== "undefined" ? document : null) {
+        this.document = doc;
         this.elements = {};
-        this.bindElements();
+        if (this.document) {
+            this.bindElements();
+        }
     }
 
     /**
      * DOM要素のバインド
      */
     bindElements() {
-        this.elements.form = document.getElementById("fortune-form");
+        const doc = this.document;
+        this.elements.form = doc.getElementById("fortune-form");
 
-        // 入力フィールド
-        this.elements.year = document.getElementById("year");
-        this.elements.month = document.getElementById("month");
-        this.elements.day = document.getElementById("day");
-        this.elements.hour = document.getElementById("hour");
-        this.elements.minute = document.getElementById("minute");
-        this.elements.genderInputs = document.getElementsByName("gender");
-        this.elements.birthplace = document.getElementById("birthplace");
+        this.elements.year = doc.getElementById("year");
+        this.elements.month = doc.getElementById("month");
+        this.elements.day = doc.getElementById("day");
+        this.elements.hour = doc.getElementById("hour");
+        this.elements.minute = doc.getElementById("minute");
+        this.elements.genderInputs = doc.getElementsByName("gender");
+        this.elements.shiModeInputs = doc.getElementsByName("shi-mode");
+        this.elements.prefecture = doc.getElementById("prefecture");
+        this.elements.tzSign = doc.getElementById("tz-sign");
+        this.elements.tzHour = doc.getElementById("tz-hour");
+        this.elements.tzMinute = doc.getElementById("tz-minute");
+        this.elements.shiModeHelp = doc.getElementById("shi-mode-help");
+        this.elements.tzHelp = doc.getElementById("tz-help");
 
-        // ボタン
-        this.elements.calculateBtn = document.getElementById("calculate-btn");
-        this.elements.clearBtn = document.getElementById("clear-btn");
-        this.elements.pasteBtn = document.getElementById("paste-btn");
+        this.elements.calculateBtn = doc.getElementById("calculate-btn");
+        this.elements.clearBtn = doc.getElementById("clear-btn");
+        this.elements.pasteBtn = doc.getElementById("paste-btn");
+        this.elements.errorMessage = doc.getElementById("error-message");
 
-        // エラー表示エリア
-        this.elements.errorMessage = document.getElementById("error-message");
+        this._bindShiModeHelp();
+        this.updateShiHelp();
+    }
+
+    _bindShiModeHelp() {
+        const inputs = this.elements.shiModeInputs;
+        if (!inputs) {
+            return;
+        }
+        for (const radio of inputs) {
+            radio.addEventListener("change", () => this.updateShiHelp());
+        }
+    }
+
+    updateShiHelp() {
+        if (!this.elements.shiModeHelp) {
+            return;
+        }
+        const mode = this._getRadioValue(this.elements.shiModeInputs) || DEFAULT_SHI_MODE;
+        this.elements.shiModeHelp.textContent = SHI_HELP_TEXT[mode] || SHI_HELP_TEXT[SHI_MODE.SWITCH_23];
+    }
+
+    _getRadioValue(inputs) {
+        if (!inputs) {
+            return null;
+        }
+        for (const radio of inputs) {
+            if (radio.checked) {
+                return radio.value;
+            }
+        }
+        return null;
+    }
+
+    _setRadioValue(inputs, value) {
+        if (!inputs) {
+            return;
+        }
+        for (const radio of inputs) {
+            radio.checked = radio.value === value;
+        }
+    }
+
+    /**
+     * 都道府県セレクトをマスタから生成する
+     */
+    populatePrefectures(master) {
+        const select = this.elements.prefecture;
+        const doc = this.document;
+        if (!select || !master || !Array.isArray(master.prefectures)) {
+            return;
+        }
+
+        select.innerHTML = "";
+        if (Array.isArray(select.options)) {
+            select.options.length = 0;
+        }
+
+        const placeholder = doc.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "未選択";
+        select.appendChild(placeholder);
+
+        for (const prefecture of master.prefectures) {
+            const option = doc.createElement("option");
+            option.value = prefecture.code;
+            option.textContent = prefecture.name;
+            select.appendChild(option);
+        }
     }
 
     /**
      * フォームの値を取得
      */
     getValues() {
-        const year = this.elements.year.value;
-        const month = this.elements.month.value;
-        const day = this.elements.day.value;
-        const hour = this.elements.hour.value;
-        const minute = this.elements.minute.value;
-        const birthplace = this.elements.birthplace.value;
-
-        let gender = null;
-        for (const radio of this.elements.genderInputs) {
-            if (radio.checked) {
-                gender = radio.value;
-                break;
-            }
-        }
-
-        // InputParser.parseManualInput に渡すためにそのまま返す
-        // 解析は Controller 側で行う
         return {
-            year, month, day, hour, minute, gender, birthplace
+            year: this.elements.year.value,
+            month: this.elements.month.value,
+            day: this.elements.day.value,
+            hour: this.elements.hour.value,
+            minute: this.elements.minute.value,
+            gender: this._getRadioValue(this.elements.genderInputs),
+            prefectureCode: this.elements.prefecture.value,
+            tzSign: this.elements.tzSign.value,
+            tzHour: this.elements.tzHour.value,
+            tzMinute: this.elements.tzMinute.value,
+            shiMode: this._getRadioValue(this.elements.shiModeInputs),
         };
     }
 
@@ -64,17 +139,21 @@ export class FormRenderer {
         if (values.year) this.elements.year.value = values.year;
         if (values.month) this.elements.month.value = values.month;
         if (values.day) this.elements.day.value = values.day;
-        if (values.hour !== null) this.elements.hour.value = values.hour;
-        if (values.minute !== null) this.elements.minute.value = values.minute;
-        if (values.birthplace) this.elements.birthplace.value = values.birthplace;
+        if (values.hour !== null && values.hour !== undefined) this.elements.hour.value = values.hour;
+        if (values.minute !== null && values.minute !== undefined) this.elements.minute.value = values.minute;
 
         if (values.gender) {
-            for (const radio of this.elements.genderInputs) {
-                if (radio.value === values.gender) {
-                    radio.checked = true;
-                    break;
-                }
-            }
+            this._setRadioValue(this.elements.genderInputs, values.gender);
+        }
+        if (values.prefectureCode !== undefined) {
+            this.elements.prefecture.value = values.prefectureCode || "";
+        }
+        if (values.tzSign) this.elements.tzSign.value = values.tzSign;
+        if (values.tzHour !== undefined && values.tzHour !== null) this.elements.tzHour.value = values.tzHour;
+        if (values.tzMinute !== undefined && values.tzMinute !== null) this.elements.tzMinute.value = values.tzMinute;
+        if (values.shiMode) {
+            this._setRadioValue(this.elements.shiModeInputs, values.shiMode);
+            this.updateShiHelp();
         }
     }
 
@@ -82,8 +161,20 @@ export class FormRenderer {
      * フォームのリセット
      */
     reset() {
-        this.elements.form.reset();
+        if (this.elements.form && typeof this.elements.form.reset === "function") {
+            this.elements.form.reset();
+        }
+        this._applyDefaults();
         this.hideError();
+    }
+
+    _applyDefaults() {
+        this._setRadioValue(this.elements.shiModeInputs, DEFAULT_SHI_MODE);
+        if (this.elements.tzSign) this.elements.tzSign.value = "+";
+        if (this.elements.tzHour) this.elements.tzHour.value = "0";
+        if (this.elements.tzMinute) this.elements.tzMinute.value = "0";
+        if (this.elements.prefecture) this.elements.prefecture.value = "";
+        this.updateShiHelp();
     }
 
     /**
