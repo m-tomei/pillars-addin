@@ -16,10 +16,18 @@ export class ResultRenderer {
 
   /**
    * 結果を表示してセクションを表示状態にする
+   * @param {object} fortune
+   * @param {object} juuniunResults
+   * @param {object} tsuuhenResults
+   * @param {Array} greatFortuneCycles
+   * @param {number} displayYear 補正適用時は t_corrected.year
+   * @param {{correction?: object, shiMode?: string}} [meta]
    */
-  showResults(fortune, juuniunResults, tsuuhenResults, greatFortuneCycles, year) {
+  showResults(fortune, juuniunResults, tsuuhenResults, greatFortuneCycles, displayYear, meta = {}) {
+    this.displayYear = displayYear;
+    this.meta = meta;
     this.renderFortuneTable(fortune, juuniunResults, tsuuhenResults);
-    this.renderGreatFortune(greatFortuneCycles, year);
+    this.renderGreatFortune(greatFortuneCycles, displayYear);
     this.elements.resultSection.style.display = "block";
   }
 
