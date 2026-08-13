@@ -1,17 +1,29 @@
 /**
  * 結果描画クラス
  */
+import { DateUtils } from "../utils/dateUtils.js";
+import { SHI_MODE, SHI_MODE_LABEL } from "../utils/constants.js";
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
 export class ResultRenderer {
-  constructor() {
+  constructor(doc = typeof document !== "undefined" ? document : null) {
+    this.document = doc;
     this.elements = {};
-    this.bindElements();
+    if (this.document) {
+      this.bindElements();
+    }
   }
 
   bindElements() {
-    this.elements.resultSection = document.getElementById("result-section");
-    this.elements.fortuneResult = document.getElementById("fortune-result");
-    this.elements.greatFortuneResult = document.getElementById("great-fortune-result");
-    this.elements.savePngBtn = document.getElementById("save-png-btn");
+    const doc = this.document;
+    this.elements.resultSection = doc.getElementById("result-section");
+    this.elements.fortuneResult = doc.getElementById("fortune-result");
+    this.elements.greatFortuneResult = doc.getElementById("great-fortune-result");
+    this.elements.savePngBtn = doc.getElementById("save-png-btn");
+    this.elements.timeCorrectionSummary = doc.getElementById("time-correction-summary");
   }
 
   /**
@@ -26,18 +38,84 @@ export class ResultRenderer {
   showResults(fortune, juuniunResults, tsuuhenResults, greatFortuneCycles, displayYear, meta = {}) {
     this.displayYear = displayYear;
     this.meta = meta;
+    this.renderCorrectionSummary(meta.correction, meta.shiMode);
     this.renderFortuneTable(fortune, juuniunResults, tsuuhenResults);
     this.renderGreatFortune(greatFortuneCycles, displayYear);
-    this.elements.resultSection.style.display = "block";
+    if (this.elements.resultSection) {
+      this.elements.resultSection.style.display = "block";
+    }
   }
 
   /**
    * 結果をクリアして非表示にする
    */
   clear() {
-    this.elements.fortuneResult.innerHTML = "";
-    this.elements.greatFortuneResult.innerHTML = "";
-    this.elements.resultSection.style.display = "none";
+    if (this.elements.fortuneResult) {
+      this.elements.fortuneResult.innerHTML = "";
+    }
+    if (this.elements.greatFortuneResult) {
+      this.elements.greatFortuneResult.innerHTML = "";
+    }
+    this.clearCorrectionSummary();
+    if (this.elements.resultSection) {
+      this.elements.resultSection.style.display = "none";
+    }
+  }
+
+  clearCorrectionSummary() {
+    const el = this.elements.timeCorrectionSummary;
+    if (!el) {
+      return;
+    }
+    el.innerHTML = "";
+    el.style.display = "none";
+  }
+
+  /**
+   * 時刻補正サマリ（命式テーブル直前 / PNGキャプチャ対象）
+   */
+  renderCorrectionSummary(correction, shiMode) {
+    const el = this.elements.timeCorrectionSummary;
+    if (!el) {
+      return;
+    }
+
+    if (!correction || correction.applied === false) {
+      el.innerHTML = "<p>時刻補正: 時刻未入力のため補正・時柱なし</p>";
+      el.style.display = "block";
+      return;
+    }
+
+    const display = correction.display || {};
+    const shiLabel = SHI_MODE_LABEL[shiMode] || shiMode || "";
+    const note = this._dayPillarNote(correction, shiMode);
+
+    el.innerHTML = `
+      <h3>時刻補正</h3>
+      <p>時刻補正: ${display.statusText || "適用"}</p>
+      <ul>
+        <li>入力時刻: ${display.inputText || ""}</li>
+        <li>時差: ${display.offsetText || ""}</li>
+        <li>地方平均時補正: ${display.longitudeText || ""}</li>
+        <li>補正後時刻: ${display.correctedText || ""}</li>
+        <li>子時モード: ${shiLabel}</li>
+      </ul>
+      ${note}
+    `;
+    el.style.display = "block";
+  }
+
+  _dayPillarNote(correction, shiMode) {
+    if (shiMode !== SHI_MODE.SWITCH_23) {
+      return "";
+    }
+    const corrected = correction.corrected;
+    if (!corrected || corrected.hour !== 23) {
+      return "";
+    }
+    const next = DateUtils.addDays(corrected.year, corrected.month, corrected.day, 1);
+    const ymd = `${next.year}-${pad2(next.month)}-${pad2(next.day)}`;
+    return `<p class="correction-note">注: 23時切替のため日柱は翌日扱い（${ymd}）</p>`;
   }
 
   /**
@@ -134,7 +212,9 @@ export class ResultRenderer {
       </table>
     `;
 
-    this.elements.fortuneResult.innerHTML = tableHTML;
+    if (this.elements.fortuneResult) {
+      this.elements.fortuneResult.innerHTML = tableHTML;
+    }
   }
 
   formatHiddenStems(hiddenStems) {
@@ -149,6 +229,9 @@ export class ResultRenderer {
    * 大運のレンダリング
    */
   renderGreatFortune(cycles, birthYear) {
+    if (!this.elements.greatFortuneResult) {
+      return;
+    }
     if (!cycles || cycles.length === 0) {
       this.elements.greatFortuneResult.innerHTML = "<p>大運情報なし</p>";
       return;
@@ -186,6 +269,8 @@ export class ResultRenderer {
   }
 
   onSavePNG(handler) {
-    this.elements.savePngBtn.addEventListener("click", handler);
+    if (this.elements.savePngBtn) {
+      this.elements.savePngBtn.addEventListener("click", handler);
+    }
   }
 }
